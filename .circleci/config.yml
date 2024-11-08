@@ -14,7 +14,7 @@ commands:
         default: false
       bin-dir:
         type: string
-        default: "./bin"
+        default: "/home/circleci/bin"
     steps:
       - run:
           name: "Installing Act << parameters.version >>"
@@ -43,7 +43,7 @@ jobs:
       image: ubuntu-2404:current
     steps:
       - install-act
-      - run: act
+      - run: act --help
 
 
 workflows:
