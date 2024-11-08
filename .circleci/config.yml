@@ -8,7 +8,7 @@ commands:
     parameters:
       version:
         type: string
-        default: ""
+        default: "latest"
       debug:
         type: boolean
         default: false
@@ -34,16 +34,30 @@ commands:
             fi
 
             # Install Act with the specified version, bin-dir, and debug options
-            curl -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s $BIN_DIR_FLAG $DEBUG_FLAG << parameters.version >>
+            curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- $BIN_DIR_FLAG $DEBUG_FLAG << parameters.version >>
 
+  act:
+    parameters:
+      uses:
+        type: string
+      with:
+        type: string
+      env:
+        type: string
+    steps:
+      - run:
+          name: Running << parameters.uses >>
+          command: |
+            echo "test"
 
 jobs:
   test:
     machine:
       image: ubuntu-2404:current
     steps:
+      - checkout
       - install-act
-      - run: act --help
+      - run: act -W hello-world.yml
 
 
 workflows:
