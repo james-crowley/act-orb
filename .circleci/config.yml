@@ -1,0 +1,52 @@
+version: 2.1
+
+# orbs:
+#   node: circleci/node@x.y
+
+commands:
+  install-act:
+    parameters:
+      version:
+        type: string
+        default: ""
+      debug:
+        type: boolean
+        default: false
+      bin-dir:
+        type: string
+        default: "./bin"
+    steps:
+      - run:
+          name: "Installing Act << parameters.version >>"
+          command: |
+            # Set the bin-dir and debug flags based on the parameters
+            BIN_DIR_FLAG=""
+            DEBUG_FLAG=""
+
+            # Check if a custom bin directory is set
+            if [[ "<< parameters.bin-dir >>" != "./bin" ]]; then
+              BIN_DIR_FLAG="-b << parameters.bin-dir >>"
+            fi
+
+            # Enable debug logging if the debug parameter is true
+            if [[ "<< parameters.debug >>" == "true" ]]; then
+              DEBUG_FLAG="-d"
+            fi
+
+            # Install Act with the specified version, bin-dir, and debug options
+            curl -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sh -s $BIN_DIR_FLAG $DEBUG_FLAG << parameters.version >>
+
+
+jobs:
+  test:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - install-act
+      - run: act
+
+
+workflows:
+  main:
+    jobs:
+      - test
