@@ -101,9 +101,9 @@ commands:
             done
 
   create-workflow-file:
-    description: Generate a GitHub Actions-like workflow YAML using yq
+    description: Generate a GitHub Actions-like workflow YAML using jq and yq
     parameters:
-      yml-file:
+      workflow-file:
         type: string
         default: /tmp/workflow.yml
       action:
@@ -114,7 +114,8 @@ commands:
         description: "Key-value pairs for the `with` block"
       env:
         type: string
-        description: "Key-value pairs for the `env` block"
+        default: "{}"
+        description: "Optional key-value pairs for the `env` block"
       workflow-name:
         type: string
         default: "circleci"
@@ -142,10 +143,10 @@ commands:
                   --arg RUNS_ON_IMAGE "<< parameters.runs-on-image >>" \
                   --arg ACTION "<< parameters.action >>" \
                   --argjson WITH_INPUTS "$with_json" \
-                  --argjson ENV_INPUTS "$env_json"
-            '{
+                  --argjson ENV_INPUTS "$env_json" '
+            {
               name: $WORKFLOW_NAME,
-              on: { ($WORKFLOW_EVENT): null },
+              on: { $WORKFLOW_EVENT },
               jobs: {
                 ($JOB_NAME): {
                   "runs-on": $RUNS_ON_IMAGE,
@@ -153,14 +154,14 @@ commands:
                     {
                       uses: $ACTION,
                       with: $WITH_INPUTS,
-                      env: $ENV_INPUTS
+                      env: ($ENV_INPUTS | select(length > 0))
                     }
                   ]
                 }
               }
-            }' | yq eval -P - > << parameters.yml-file >>
+            }' | yq eval -P - > << parameters.workflow-file >>
 
-            echo "Generated workflow YAML file at workflow.yml"
+            echo "Generated workflow YAML file at << parameters.workflow-file >>"
 
 
   act:
