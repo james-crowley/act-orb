@@ -193,6 +193,7 @@ jobs:
             hello: "world"
           env: |
             testing: 123
+      - run: cat /tmp/workflow.yml
       - run: 
           name: Running Act
           command: |
