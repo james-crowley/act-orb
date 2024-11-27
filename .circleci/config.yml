@@ -131,14 +131,8 @@ commands:
       - run:
           name: Generate Workflow YAML Using yq
           command: |
-            # Convert `with` string to YAML format using a bash loop
-            with_yaml=$(echo "<< parameters.with >>" | while IFS=':' read -r key value; do echo "$key: \"$value\""; done | yq eval -j -)
-
-            # Convert `env` string to YAML format using a bash loop
-            env_yaml=$(echo "<< parameters.env >>" | while IFS=':' read -r key value; do echo "$key: \"$value\""; done | yq eval -j -)
-
             # Create the workflow YAML file using yq
-            yq eval-all '
+            yq eval '
               .name = env.WORKFLOW_NAME |
               .on = { (env.WORKFLOW_EVENT): null } |
               .jobs = {
@@ -157,8 +151,9 @@ commands:
               --arg WORKFLOW_EVENT "<< parameters.workflow-event >>" \
               --arg JOB_NAME "<< parameters.job-name >>" \
               --arg RUNS_ON_IMAGE "<< parameters.runs-on-image >>" \
-              --argjson WITH "$with_yaml" \
-              --argjson ENV "$env_yaml" \
+              --arg ACTION "<< parameters.action >>" \
+              --arg WITH "<< parameters.with >>" \
+              --arg ENV "<< parameters.env >>" \
               - > << parameters.yml-file >>
 
             echo "Generated workflow YAML file at << parameters.yml-file >>"
