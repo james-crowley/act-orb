@@ -133,8 +133,12 @@ commands:
           name: Generate Workflow YAML Using yq
           command: |
             echo "Converting 'with' and 'env' parameters to JSON"
-            with_json=$(printf "%s" "<< parameters.with >>" | yq -o=json)
-            env_json=$(printf "%s" "<< parameters.env >>" | yq -o=json)
+            with_json=$(printf "%s" "<< parameters.with >>" | yq eval -o=json)
+            env_json=$(printf "%s" "<< parameters.env >>" | yq eval -o=json)
+
+            echo $with_json
+
+            echo $env_json
 
             echo "Generating YAML directly using jq and yq"
             jq -n --arg WORKFLOW_NAME "<< parameters.workflow-name >>" \
@@ -146,7 +150,7 @@ commands:
                   --argjson ENV_INPUTS "$env_json" '
             {
               name: $WORKFLOW_NAME,
-              on: $WORKFLOW_EVENT,
+              on: {($WORKFLOW_EVENT): {}},
               jobs: {
                 ($JOB_NAME): {
                   "runs-on": $RUNS_ON_IMAGE,
