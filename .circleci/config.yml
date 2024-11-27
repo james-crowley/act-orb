@@ -131,32 +131,41 @@ commands:
       - run:
           name: Generate Workflow YAML Using yq
           command: |
-            # Create the workflow YAML file using yq
-            yq eval '
-              .name = env.WORKFLOW_NAME |
-              .on = { (env.WORKFLOW_EVENT): null } |
-              .jobs = {
-                (env.JOB_NAME): {
-                  "runs-on": env.RUNS_ON_IMAGE,
+            echo "Converting 'with' and 'env' parameters to JSON"
+            with_json=$(printf "%s" "<< parameters.with >>" | yq eval -j)
+            env_json=$(printf "%s" "<< parameters.env >>" | yq eval -j)
+
+            echo $with_json
+
+            echo "env"
+            echo $env_json
+
+            echo "Generating YAML directly using jq and yq"
+            jq -n --arg WORKFLOW_NAME "<< parameters.workflow-name >>" \
+                  --arg WORKFLOW_EVENT "<< parameters.workflow-event >>" \
+                  --arg JOB_NAME "<< parameters.job-name >>" \
+                  --arg RUNS_ON_IMAGE "<< parameters.runs-on-image >>" \
+                  --arg ACTION "<< parameters.action >>" \
+                  --argjson WITH "$with_json" \
+                  --argjson ENV "$env_json" '
+            {
+              name: $WORKFLOW_NAME,
+              on: { ($WORKFLOW_EVENT): null },
+              jobs: {
+                ($JOB_NAME): {
+                  "runs-on": $RUNS_ON_IMAGE,
                   steps: [
                     {
-                      uses: env.ACTION,
-                      with: env.WITH,
-                      env: env.ENV
+                      uses: $ACTION,
+                      with: $WITH,
+                      env: $ENV
                     }
                   ]
                 }
-              }' \
-              --arg WORKFLOW_NAME "<< parameters.workflow-name >>" \
-              --arg WORKFLOW_EVENT "<< parameters.workflow-event >>" \
-              --arg JOB_NAME "<< parameters.job-name >>" \
-              --arg RUNS_ON_IMAGE "<< parameters.runs-on-image >>" \
-              --arg ACTION "<< parameters.action >>" \
-              --arg WITH "<< parameters.with >>" \
-              --arg ENV "<< parameters.env >>" \
-              - > << parameters.yml-file >>
+              }
+            }' | yq eval -P - > << parameters.yml-file >>
 
-            echo "Generated workflow YAML file at << parameters.yml-file >>"
+            echo "Generated workflow YAML file at workflow.yml"
 
 
   act:
