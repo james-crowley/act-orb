@@ -197,8 +197,8 @@ jobs:
           name: Running Act
           command: |
             act -W /tmp/workflow.yml -P ubuntu-latest=node:16-buster-slim --secret-file /tmp/act.secrets --env-file /tmp/act.env -b --detect-event
-    environment:
-      GITHUB_TOKEN: "testing123"
+    # environment:
+    #   GITHUB_TOKEN: "testing123"
 
 
 workflows:
