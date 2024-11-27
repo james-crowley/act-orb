@@ -133,8 +133,8 @@ commands:
           name: Generate Workflow YAML Using yq
           command: |
             echo "Converting 'with' and 'env' parameters to JSON"
-            with_json=$(printf "%s" "<< parameters.with >>" | yq eval -j)
-            env_json=$(printf "%s" "<< parameters.env >>" | yq eval -j)
+            with_json=$(printf "%s" "<< parameters.with >>" | yq -o=json)
+            env_json=$(printf "%s" "<< parameters.env >>" | yq -o=json)
 
             echo "Generating YAML directly using jq and yq"
             jq -n --arg WORKFLOW_NAME "<< parameters.workflow-name >>" \
@@ -146,7 +146,7 @@ commands:
                   --argjson ENV_INPUTS "$env_json" '
             {
               name: $WORKFLOW_NAME,
-              on: { $WORKFLOW_EVENT },
+              on: $WORKFLOW_EVENT,
               jobs: {
                 ($JOB_NAME): {
                   "runs-on": $RUNS_ON_IMAGE,
@@ -186,14 +186,6 @@ jobs:
       - checkout
       - install-act
       - create-env-and-secret-file
-      - run:
-          command: |
-            echo "Dumping env file"
-            cat /tmp/act.env
-      - run:
-          command: |
-            echo "Dumping secrets file"
-            cat /tmp/act.secrets
       - create-workflow-file:
           action: actions/hello-world-javascript-action@v1.1
           with: |
@@ -201,11 +193,10 @@ jobs:
             hello: "world"
           env: |
             testing: 123
-      - run:
+      - run: 
+          name: Running Act
           command: |
-            echo "Dumping workflow file"
-            cat /tmp/workflow.yml
-      - run: act -W hello-world.yml -P ubuntu-latest=node:16-buster-slim
+            act -W /tmp/workflow.yml -P ubuntu-latest=node:16-buster-slim --secret-file /tmp/act.secrets --env-file /tmp/act.env -b --detect-event
     environment:
       GITHUB_TOKEN: "testing123"
 
