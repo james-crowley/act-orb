@@ -131,15 +131,11 @@ commands:
       - run:
           name: Generate Workflow YAML Using yq
           command: |
-            echo "<< parameters.with >>"
-            echo ""
-            echo "env"
-            echo "<< parameters.env >>"
-            # Preprocess 'with' map into YAML format
-            # with_yaml=$(echo "$(<< parameters.with >>)" | jq -r 'to_entries | .[] | "\(.key): \(.value)"' | yq eval -j -)
+            # Convert `with` string to YAML format using a bash loop
+            with_yaml=$(echo "<< parameters.with >>" | while IFS=':' read -r key value; do echo "$key: \"$value\""; done | yq eval -j -)
 
-            # # Preprocess 'env' map into YAML format
-            # env_yaml=$(echo "$(<< parameters.env >>)" | jq -r 'to_entries | .[] | "\(.key): \(.value)"' | yq eval -j -)
+            # Convert `env` string to YAML format using a bash loop
+            env_yaml=$(echo "<< parameters.env >>" | while IFS=':' read -r key value; do echo "$key: \"$value\""; done | yq eval -j -)
 
             # Create the workflow YAML file using yq
             yq eval-all '
