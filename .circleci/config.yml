@@ -100,6 +100,74 @@ commands:
               echo "$KEY=${SECRET_ENV_VARS[$KEY]}" >> << parameters.secret-file >>
             done
 
+  create-workflow-file:
+    description: Generate a GitHub Actions-like workflow YAML using yq
+    parameters:
+      yml-file:
+        type: string
+        default: /tmp/workflow.yml
+      action:
+        type: string
+        description: "The GitHub Action to execute (e.g., actions/checkout@v2)"
+      with:
+        type: string
+        description: "Key-value pairs for the `with` block"
+      env:
+        type: string
+        description: "Key-value pairs for the `env` block"
+      workflow-name:
+        type: string
+        default: "circleci"
+      workflow-event:
+        type: string
+        default: "push"
+      job-name:
+        type: string
+        default: "action"
+      runs-on-image:
+        type: string
+        default: "ubuntu-latest"
+    steps:
+      - run:
+          name: Generate Workflow YAML Using yq
+          command: |
+            echo "<< parameters.with >>"
+            echo ""
+            echo "env"
+            echo "<< parameters.env >>"
+            # Preprocess 'with' map into YAML format
+            # with_yaml=$(echo "$(<< parameters.with >>)" | jq -r 'to_entries | .[] | "\(.key): \(.value)"' | yq eval -j -)
+
+            # # Preprocess 'env' map into YAML format
+            # env_yaml=$(echo "$(<< parameters.env >>)" | jq -r 'to_entries | .[] | "\(.key): \(.value)"' | yq eval -j -)
+
+            # Create the workflow YAML file using yq
+            yq eval-all '
+              .name = env.WORKFLOW_NAME |
+              .on = { (env.WORKFLOW_EVENT): null } |
+              .jobs = {
+                (env.JOB_NAME): {
+                  "runs-on": env.RUNS_ON_IMAGE,
+                  steps: [
+                    {
+                      uses: env.ACTION,
+                      with: env.WITH,
+                      env: env.ENV
+                    }
+                  ]
+                }
+              }' \
+              --arg WORKFLOW_NAME "<< parameters.workflow-name >>" \
+              --arg WORKFLOW_EVENT "<< parameters.workflow-event >>" \
+              --arg JOB_NAME "<< parameters.job-name >>" \
+              --arg RUNS_ON_IMAGE "<< parameters.runs-on-image >>" \
+              --argjson WITH "$with_yaml" \
+              --argjson ENV "$env_yaml" \
+              - > << parameters.yml-file >>
+
+            echo "Generated workflow YAML file at << parameters.yml-file >>"
+
+
   act:
     parameters:
       uses:
@@ -130,6 +198,17 @@ jobs:
           command: |
             echo "Dumping secrets file"
             cat /tmp/act.secrets
+      - create-workflow-file:
+          action: actions/hello-world-javascript-action@v1.1
+          with: |
+            who-to-greet: "Mona the Octocat"
+            hello: "world"
+          env: |
+            testing: 123
+      - run:
+          command: |
+            echo "Dumping workflow file"
+            cat /tmp/workflow.yml
       - run: act -W hello-world.yml -P ubuntu-latest=node:16-buster-slim
     environment:
       GITHUB_TOKEN: "testing123"
