@@ -133,12 +133,12 @@ commands:
           name: Generate Workflow YAML Using yq
           command: |
             # Capture 'with' and 'env' inputs directly
-            WITH_STRING=$(\<<EOF
+            WITH_STRING=$(cat <<EOF
             << parameters.with >>
             EOF
             )
 
-            ENV_STRING=$(\<<EOF
+            ENV_STRING=$(cat <<EOF
             << parameters.env >>
             EOF
             )
