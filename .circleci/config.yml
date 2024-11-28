@@ -132,16 +132,27 @@ commands:
       - run:
           name: Generate Workflow YAML Using yq
           command: |
-            # Format 'with' parameter to ensure proper YAML formatting
-            if [ -n "<< parameters.with >>" ]; then
-              formatted_with=$(printf "<< parameters.with >>" | sed 's/^/          /')
+            # Capture 'with' and 'env' inputs directly
+            WITH_STRING=$(\<<EOF
+            << parameters.with >>
+            EOF
+            )
+
+            ENV_STRING=$(\<<EOF
+            << parameters.env >>
+            EOF
+            )
+
+            # Format 'with' parameter
+            if [ -n "$WITH_STRING" ]; then
+              formatted_with="        with:\n$(echo "$WITH_STRING" | sed 's/^/          /')"
             else
               formatted_with=""
             fi
 
-            # Format 'env' parameter to ensure proper YAML formatting
-            if [ -n "<< parameters.env >>" ]; then
-              formatted_env=$(printf "<< parameters.env >>" | sed 's/^/          /')
+            # Format 'env' parameter
+            if [ -n "$ENV_STRING" ]; then
+              formatted_env="        env:\n$(echo "$ENV_STRING" | sed 's/^/          /')"
             else
               formatted_env=""
             fi
@@ -155,22 +166,12 @@ commands:
                 runs-on: << parameters.runs-on-image >>
                 steps:
                   - uses: << parameters.action >>
-                    with:
             $formatted_with
-                    env:
             $formatted_env
             EOF
 
-            # Clean up empty blocks if no 'with' or 'env' is provided
-            if [ -z "$formatted_with" ]; then
-              sed -i '/with:/d' << parameters.workflow-file >>
-            fi
-
-            if [ -z "$formatted_env" ]; then
-              sed -i '/env:/d' << parameters.workflow-file >>
-            fi
-
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
+
 
 
   act:
