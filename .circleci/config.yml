@@ -143,6 +143,9 @@ commands:
             EOF
             )
 
+            echo $ENV_STRING
+            echo $WITH_STRING
+
             # Format 'with' parameter
             if [ -n "$WITH_STRING" ]; then
               formatted_with="        with:\n$(echo "$WITH_STRING" | sed 's/^/          /')"
