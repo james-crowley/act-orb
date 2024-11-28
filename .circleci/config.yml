@@ -134,12 +134,12 @@ commands:
           command: |
             echo "Converting 'with' and 'env' parameters to JSON"
 
-            with_json=$(yq eval -o=json <<EOF
+            with_json=$(yq eval -o=json \<<EOF
             << parameters.with >>
             EOF
             )
 
-            env_json=$(yq eval -o=json <<EOF
+            env_json=$(yq eval -o=json \<<EOF
             << parameters.env >>
             EOF
             )
