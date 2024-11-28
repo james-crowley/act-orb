@@ -132,7 +132,21 @@ commands:
       - run:
           name: Generate Workflow YAML Using yq
           command: |
-            # Define the YAML template
+            # Format 'with' parameter to ensure proper YAML formatting
+            if [ -n "<< parameters.with >>" ]; then
+              formatted_with=$(printf "<< parameters.with >>" | sed 's/^/          /')
+            else
+              formatted_with=""
+            fi
+
+            # Format 'env' parameter to ensure proper YAML formatting
+            if [ -n "<< parameters.env >>" ]; then
+              formatted_env=$(printf "<< parameters.env >>" | sed 's/^/          /')
+            else
+              formatted_env=""
+            fi
+
+            # Generate the workflow YAML file
             cat \<<EOF > << parameters.workflow-file >>
             name: << parameters.workflow-name >>
             on: << parameters.workflow-event >>
@@ -141,9 +155,20 @@ commands:
                 runs-on: << parameters.runs-on-image >>
                 steps:
                   - uses: << parameters.action >>
-                    with: << parameters.with >>
-                    env: << parameters.env >>
+                    with:
+            $formatted_with
+                    env:
+            $formatted_env
             EOF
+
+            # Clean up empty blocks if no 'with' or 'env' is provided
+            if [ -z "$formatted_with" ]; then
+              sed -i '/with:/d' << parameters.workflow-file >>
+            fi
+
+            if [ -z "$formatted_env" ]; then
+              sed -i '/env:/d' << parameters.workflow-file >>
+            fi
 
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
 
