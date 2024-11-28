@@ -136,6 +136,8 @@ commands:
             with_json=$(printf "%s" "<< parameters.with >>" | yq eval -o=json)
             env_json=$(printf "%s" "<< parameters.env >>" | yq eval -o=json)
 
+            printf "%s" "<< parameters.with >>" 
+
             echo $with_json
 
             echo $env_json
