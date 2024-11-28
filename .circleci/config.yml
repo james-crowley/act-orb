@@ -132,46 +132,18 @@ commands:
       - run:
           name: Generate Workflow YAML Using yq
           command: |
-            echo "Converting 'with' and 'env' parameters to JSON"
-
-            with_json=$(yq eval -o=json \<<EOF
-            << parameters.with >>
+            # Define the YAML template
+            cat \<<EOF > << parameters.workflow-file >>
+            name: << parameters.workflow-name >>
+            on: << parameters.workflow-event >>
+            jobs:
+              << parameters.job-name >>:
+                runs-on: << parameters.runs-on-image >>
+                steps:
+                  - uses: << parameters.action >>
+                    with: << parameters.with >>
+                    env: << parameters.env >>
             EOF
-            )
-
-            env_json=$(yq eval -o=json \<<EOF
-            << parameters.env >>
-            EOF
-            )
-
-            echo $with_json
-
-            echo $env_json
-
-            echo "Generating YAML directly using jq and yq"
-            jq -n --arg WORKFLOW_NAME "<< parameters.workflow-name >>" \
-                  --arg WORKFLOW_EVENT "<< parameters.workflow-event >>" \
-                  --arg JOB_NAME "<< parameters.job-name >>" \
-                  --arg RUNS_ON_IMAGE "<< parameters.runs-on-image >>" \
-                  --arg ACTION "<< parameters.action >>" \
-                  --argjson WITH_INPUTS "$with_json" \
-                  --argjson ENV_INPUTS "$env_json" '
-            {
-              name: $WORKFLOW_NAME,
-              on: {($WORKFLOW_EVENT): {}},
-              jobs: {
-                ($JOB_NAME): {
-                  "runs-on": $RUNS_ON_IMAGE,
-                  steps: [
-                    {
-                      uses: $ACTION,
-                      with: $WITH_INPUTS,
-                      env: ($ENV_INPUTS | select(length > 0))
-                    }
-                  ]
-                }
-              }
-            }' | yq eval -P - > << parameters.workflow-file >>
 
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
 
