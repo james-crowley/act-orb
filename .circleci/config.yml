@@ -575,11 +575,12 @@ workflows:
   main:
     jobs:
       - act:
-          uses: aquasecurity/trivy-action@master
+          uses: aquasecurity/trivy-action@v0.57.0
           with: |
             scan-type: fs
             ignore-unfixed: true
             format: sarif
             output: report.sarif
-            scanners: vuln,secret,misconfig,license
+            scanners: vuln,secret,misconfig,license]
+          verbose: true
           context: act
