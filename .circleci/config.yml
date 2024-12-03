@@ -215,6 +215,10 @@ commands:
         type: string
         default: .
         description: Working directory for the workflow
+      action-offline-mode:
+        type: boolean
+        default: false
+        description: Enable offline mode for actions (runs without fetching actions from remote sources)
       cache-actions:
         type: boolean
         default: true
@@ -312,6 +316,9 @@ commands:
             if [ << parameters.verbose >> = true ]; then
               act_cmd="$act_cmd --verbose"
             fi
+            if [ << parameters.action-offline-mode >> = true ]; then
+              act_cmd="$act_cmd --action-offline-mode"
+            fi
 
             # Include additional flags if provided
             if [ -n "<< parameters.additional-act-flags >>" ]; then
@@ -351,6 +358,7 @@ jobs:
       - run: cat /tmp/workflow.yml
       - act:
           verbose: true
+          action-offline-mode: true
       - run: ls -lah
     # environment:
     #   GITHUB_TOKEN: "testing123"
