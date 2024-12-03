@@ -148,25 +148,25 @@ commands:
 
             # Format 'with' parameter
             if [ -n "$WITH_STRING" ]; then
-              formatted_with="        with:\n$(echo "$WITH_STRING" | sed 's/^/          /')"
+              formatted_with="$(echo "$WITH_STRING" | sed 's/^/          /')"
             else
               formatted_with=""
             fi
 
             # Format 'env' parameter
             if [ -n "$ENV_STRING" ]; then
-              formatted_env="        env:\n$(echo "$ENV_STRING" | sed 's/^/          /')"
+              formatted_env="$(echo "$ENV_STRING" | sed 's/^/          /')"
             else
               formatted_env=""
             fi
 
-            yaml_env=$(echo $formatted_env | yq eval -P)
-            yaml_with=$(echo $formatted_with | yq eval -P)
+            # yaml_env=$(echo $formatted_env | yq eval -P)
+            # yaml_with=$(echo $formatted_with | yq eval -P)
 
-            echo "Formatted"
-            echo $yaml_env
-            echo "Formatted"
-            echo $yaml_with
+            # echo "Formatted"
+            # echo $yaml_env
+            # echo "Formatted"
+            # echo $yaml_with
 
             # Generate the workflow YAML file
             cat \<<EOF > << parameters.workflow-file >>
@@ -177,7 +177,9 @@ commands:
                 runs-on: << parameters.runs-on-image >>
                 steps:
                   - uses: << parameters.action >>
+                    with:
             $formatted_with
+                    env:
             $formatted_env
             EOF
 
