@@ -170,10 +170,8 @@ commands:
                 runs-on: << parameters.runs-on-image >>
                 steps:
                   - uses: << parameters.action >>
-                    with:
-            $formatted_with
-                    env:
-            $formatted_env
+            $(if [ -n "$formatted_with" ]; then echo "        with:"; echo "$formatted_with"; fi)
+            $(if [ -n "$formatted_env" ]; then echo "        env:"; echo "$formatted_env"; fi)
             EOF
 
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
