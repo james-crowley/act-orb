@@ -207,6 +207,8 @@ jobs:
           with: |
             who-to-greet: "Mona the Octocat"
             hello: "world"
+          env: |
+            testing: "123"
       - run: cat /tmp/workflow.yml
       - run: 
           name: Running Act
