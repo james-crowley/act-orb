@@ -588,3 +588,8 @@ workflows:
           verbose: true
           platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
           context: act
+      - act:
+          name: "Hello world"
+          uses: actions/hello-world-javascript-action@v1.1
+          with: |
+            who-to-greet: "Mona the Octocat"
