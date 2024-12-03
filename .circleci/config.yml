@@ -582,3 +582,4 @@ workflows:
             format: sarif
             output: report.sarif
             scanners: vuln,secret,misconfig,license
+          context: act
