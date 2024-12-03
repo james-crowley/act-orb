@@ -171,6 +171,9 @@ commands:
             $(if [ -n "$formatted_env" ]; then echo "        env:"; echo "$formatted_env"; fi)
             EOF
 
+            # Echo the workflow file for debugging
+            echo "Generated workflow: $(cat << parameters.workflow-file >>)"
+            
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
 
   run-act:
@@ -583,4 +586,5 @@ workflows:
             output: report.sarif
             scanners: vuln,secret,misconfig,license]
           verbose: true
+          platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
           context: act
