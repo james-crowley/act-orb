@@ -575,8 +575,10 @@ workflows:
   main:
     jobs:
       - act:
-          uses: actions/hello-world-javascript-action@v1.1
+          uses: aquasecurity/trivy-action@master
           with: |
-            who-to-greet: "Mona the Octocat"
-          env: |
-            hello: world
+            scan-type: fs
+            ignore-unfixed: true
+            format: sarif
+            output: report.sarif
+            scanners: vuln,secret,misconfig,license
