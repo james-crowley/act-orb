@@ -252,15 +252,20 @@ jobs:
       image: ubuntu-2404:current
     steps:
       - checkout
+      - run: ls -lah
       - install-act
       - create-env-and-secret-file
       - create-workflow-file:
-          action: actions/hello-world-javascript-action@v1.1
+          action: 1arp/create-a-file-action@0.4.5
           with: |
-            who-to-greet: "Mona the Octocat"
+            file: 'foo.bar'
+            content: |
+              Hello
+              World
       - run: cat /tmp/workflow.yml
       - act:
           verbose: true
+      - run: ls -lah
     # environment:
     #   GITHUB_TOKEN: "testing123"
 
