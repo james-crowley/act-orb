@@ -131,7 +131,7 @@ commands:
         default: "ubuntu-latest"
     steps:
       - run:
-          name: Generate Workflow YAML Using yq
+          name: Generate Workflow YAML
           command: |
             # Capture 'with' and 'env' inputs directly
             WITH_STRING=$(cat \<<EOF
@@ -143,9 +143,6 @@ commands:
             << parameters.env >>
             EOF
             )
-
-            echo $ENV_STRING
-            echo $WITH_STRING
 
             # Format 'with' parameter
             if [ -n "$WITH_STRING" ]; then
@@ -176,21 +173,78 @@ commands:
 
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
 
-
-
   act:
     parameters:
-      uses:
+      workflow-file:
         type: string
-      with:
+        default: /tmp/workflow.yml
+      platform:
         type: string
-      env:
+        default: ubuntu-latest=node:16-buster-slim
+      env-file:
         type: string
+        default: /tmp/act.env
+        description: Path to store environment variables file
+      secret-file:
+        type: string
+        default: /tmp/act.secrets
+        description: Path to store secret variables file
+      bind:
+        type: boolean
+        default: true
+        description: Enables the bind flag which binds working directory to container, rather than copy
+      verbose:
+        type: boolean
+        default: false
+        description: Enables the verbose flag which increases verbosity of the output
+      detect-event:
+        type: boolean
+        default: true
+        description: Enables the detect event flag which uses the first event type from workflow as event that triggered the workflow
+      additional-act-flags:
+        type: string
+        default: ""
+        description: Additional flags to be passed to the `act` CLI
     steps:
       - run:
-          name: Running << parameters.uses >>
+          name: Run Act
           command: |
-            echo "test"
+            # Start building the act command
+            act_cmd="act"
+
+            # Add required workflow file
+            act_cmd="$act_cmd --workflows << parameters.workflow-file >>"
+
+            # Add platform flag
+            act_cmd="$act_cmd --platform << parameters.platform >>"
+
+            # Add env and secret file paths
+            act_cmd="$act_cmd --env-file << parameters.env-file >>"
+            act_cmd="$act_cmd --secret-file << parameters.secret-file >>"
+
+            # Conditionally add boolean flags
+            if [ << parameters.bind >> = true ]; then
+              act_cmd="$act_cmd --bind"
+            fi
+
+            if [ << parameters.verbose >> = true ]; then
+              act_cmd="$act_cmd --verbose"
+            fi
+
+            if [ << parameters.detect-event >> = true ]; then
+              act_cmd="$act_cmd --detect-event"
+            fi
+
+            # Add any additional flags
+            if [ -n "<< parameters.additional-act-flags >>" ]; then
+              act_cmd="$act_cmd << parameters.additional-act-flags >>"
+            fi
+
+            # Echo the final command (for debugging purposes)
+            echo "Running command: $act_cmd"
+
+            # Run the act command
+            eval "$act_cmd"
 
 jobs:
   test:
@@ -202,11 +256,11 @@ jobs:
       - create-env-and-secret-file
       - create-workflow-file:
           action: actions/hello-world-javascript-action@v1.1
+          with: |
+            who-to-greet: "Mona the Octocat"
       - run: cat /tmp/workflow.yml
-      - run: 
-          name: Running Act
-          command: |
-            act -W /tmp/workflow.yml -P ubuntu-latest=node:16-buster-slim --secret-file /tmp/act.secrets --env-file /tmp/act.env -b --detect-event
+      - act:
+          verbose: true
     # environment:
     #   GITHUB_TOKEN: "testing123"
 
