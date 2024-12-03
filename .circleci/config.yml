@@ -349,7 +349,8 @@ jobs:
               Hello
               World
       - run: cat /tmp/workflow.yml
-      - act
+      - act:
+          verbose: true
       - run: ls -lah
     # environment:
     #   GITHUB_TOKEN: "testing123"
