@@ -256,6 +256,14 @@ commands:
         default: ""
         description: Additional flags to be passed to the `act` CLI
     steps:
+      - when:
+          condition: << parameters.cache-actions >>
+          steps:
+            - restore_cache:
+                name: Restore Act Cache
+                keys:
+                  - act-cache-{{ checksum "<< parameters.workflow-file >>" }}
+                  - act-cache
       - run:
           name: Run Act
           command: |
@@ -286,9 +294,6 @@ commands:
             if [ -n "<< parameters.var-file >>" ]; then
               act_cmd="$act_cmd --var-file << parameters.var-file >>"
             fi
-            if [ << parameters.cache-actions >> = true ]; then
-              act_cmd="$act_cmd --use-new-action-cache"
-            fi
             if [ << parameters.pull >> = true ]; then
               act_cmd="$act_cmd --pull"
             fi
@@ -318,6 +323,14 @@ commands:
 
             # Run the `act` command
             eval "$act_cmd"
+      - when:
+          condition: << parameters.cache-actions >>
+          steps:
+            - save_cache:
+                name: Save Act Cache
+                key: act-cache-{{ checksum "<< parameters.workflow-file >>" }}
+                paths:
+                  - ~/.cache/act
 
 jobs:
   test:
