@@ -160,6 +160,14 @@ commands:
               formatted_env=""
             fi
 
+            yaml_env=$(echo $formatted_env | yq eval -P)
+            yaml_with=$(echo $formatted_with | yq eval -P)
+
+            echo "Formatted"
+            echo $yaml_env
+            echo "Formatted"
+            echo $yaml_with
+
             # Generate the workflow YAML file
             cat \<<EOF > << parameters.workflow-file >>
             name: << parameters.workflow-name >>
@@ -169,8 +177,8 @@ commands:
                 runs-on: << parameters.runs-on-image >>
                 steps:
                   - uses: << parameters.action >>
-            $formatted_env
             $formatted_with
+            $formatted_env
             EOF
 
             echo "Generated workflow YAML file at << parameters.workflow-file >>"
