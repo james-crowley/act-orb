@@ -265,6 +265,7 @@ jobs:
       - run: cat /tmp/workflow.yml
       - act:
           verbose: true
+          blind: false
       - run: ls -lah
     # environment:
     #   GITHUB_TOKEN: "testing123"
