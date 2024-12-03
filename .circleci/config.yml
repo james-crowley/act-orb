@@ -202,9 +202,6 @@ jobs:
       - create-env-and-secret-file
       - create-workflow-file:
           action: actions/hello-world-javascript-action@v1.1
-          with: |
-            who-to-greet: "Mona the Octocat"
-            hello: "world"
       - run: cat /tmp/workflow.yml
       - run: 
           name: Running Act
