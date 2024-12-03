@@ -575,7 +575,7 @@ workflows:
   main:
     jobs:
       - act:
-          uses: aquasecurity/trivy-action@v0.57.0
+          uses: aquasecurity/trivy-action@master
           with: |
             scan-type: fs
             ignore-unfixed: true
