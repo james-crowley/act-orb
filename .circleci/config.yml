@@ -110,11 +110,12 @@ commands:
         type: string
         description: "The GitHub Action to execute (e.g., actions/checkout@v2)"
       with:
+        default: ""
         type: string
         description: "Key-value pairs for the `with` block"
       env:
         type: string
-        default: "{}"
+        default: ""
         description: "Optional key-value pairs for the `env` block"
       workflow-name:
         type: string
@@ -159,14 +160,6 @@ commands:
             else
               formatted_env=""
             fi
-
-            # yaml_env=$(echo $formatted_env | yq eval -P)
-            # yaml_with=$(echo $formatted_with | yq eval -P)
-
-            # echo "Formatted"
-            # echo $yaml_env
-            # echo "Formatted"
-            # echo $yaml_with
 
             # Generate the workflow YAML file
             cat \<<EOF > << parameters.workflow-file >>
@@ -214,8 +207,6 @@ jobs:
           with: |
             who-to-greet: "Mona the Octocat"
             hello: "world"
-          env: |
-            testing: 123
       - run: cat /tmp/workflow.yml
       - run: 
           name: Running Act
