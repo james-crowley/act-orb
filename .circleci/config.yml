@@ -711,11 +711,11 @@ orbs:
             description: Specifies a specific job ID to run
           pull:
             type: boolean
-            default: true
+            default: false
             description: Forces pulling of Docker images even if already present
           rebuild:
             type: boolean
-            default: true
+            default: false
             description: Rebuilds local Docker images even if already present
           remote-name:
             type: string
