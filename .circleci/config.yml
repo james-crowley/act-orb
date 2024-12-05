@@ -736,9 +736,9 @@ orbs:
             description: Specifies the resource class for the executor
         executor: 
           name: default
-          image: << parameters.image >>
-          docker_layer_caching: << parameters.docker_layer_caching >>
-          resource_class: << parameters.resource_class >>>
+          # image: << parameters.image >>
+          # docker_layer_caching: << parameters.docker_layer_caching >>
+          # resource_class: << parameters.resource_class >>>
         steps:
           - when:
               condition: << parameters.checkout >>
