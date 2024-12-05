@@ -504,21 +504,24 @@ orbs:
               steps:
                 - checkout
           - when:
-              condition: << parameters.skip-install >>
+              condition: 
+                not: << parameters.skip-install >>
               steps:
                 - install-act:
                     version: << parameters.version >>
                     debug: << parameters.debug >>
                     bin-dir: << parameters.bin-dir >>
           - when:
-              condition: << parameters.skip-create-env-and-secret-file >>
+              condition: 
+                not: << parameters.skip-create-env-and-secret-file >>
               steps:
                 - create-env-and-secret-file:
                     env-file: << parameters.env-file >>
                     secret-file: << parameters.secret-file >>
                     secrets: << parameters.secrets >>
           - when:
-              condition: << parameters.skip-create-workflow-file >>
+              condition: 
+                not: << parameters.skip-create-workflow-file >>
               steps:
                 - create-workflow-file:
                     workflow-file: << parameters.workflow-file >>
@@ -745,21 +748,24 @@ orbs:
               steps:
                 - checkout
           - when:
-              condition: << parameters.skip-install >>
+              condition: 
+                not: << parameters.skip-install >>
               steps:
                 - install-act:
                     version: << parameters.version >>
                     debug: << parameters.debug >>
                     bin-dir: << parameters.bin-dir >>
           - when:
-              condition: << parameters.skip-create-env-and-secret-file >>
+              condition: 
+                not: << parameters.skip-create-env-and-secret-file >>
               steps:
                 - create-env-and-secret-file:
                     env-file: << parameters.env-file >>
                     secret-file: << parameters.secret-file >>
                     secrets: << parameters.secrets >>
           - when:
-              condition: << parameters.skip-create-workflow-file >>
+              condition: 
+                not: << parameters.skip-create-workflow-file >>
               steps:
                 - create-workflow-file:
                     workflow-file: << parameters.workflow-file >>
