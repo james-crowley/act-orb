@@ -1,801 +1,803 @@
 version: 2.1
 
-commands:
-  install-act:
-    description: Install Act for running GitHub Actions locally
-    parameters:
-      version:
-        type: string
-        default: "latest"
-        description: The version of Act to install
-      debug:
-        type: boolean
-        default: false
-        description: Enable debug logging for installing Act
-      bin-dir:
-        type: string
-        default: "/home/circleci/bin"
-        description: The directory where Act should be installed
-    steps:
-      - run:
-          name: "Installing Act << parameters.version >>"
-          command: |
-            # Set the bin-dir and debug flags based on the parameters
-            BIN_DIR_FLAG=""
-            DEBUG_FLAG=""
+orbs:
+  act:
+    commands:
+      install-act:
+        description: Install Act for running GitHub Actions locally
+        parameters:
+          version:
+            type: string
+            default: "latest"
+            description: The version of Act to install
+          debug:
+            type: boolean
+            default: false
+            description: Enable debug logging for installing Act
+          bin-dir:
+            type: string
+            default: "/home/circleci/bin"
+            description: The directory where Act should be installed
+        steps:
+          - run:
+              name: "Installing Act << parameters.version >>"
+              command: |
+                # Set the bin-dir and debug flags based on the parameters
+                BIN_DIR_FLAG=""
+                DEBUG_FLAG=""
 
-            # Check if a custom bin directory is set
-            if [[ "<< parameters.bin-dir >>" != "./bin" ]]; then
-              BIN_DIR_FLAG="-b << parameters.bin-dir >>"
-            fi
-
-            # Enable debug logging if the debug parameter is true
-            if [[ "<< parameters.debug >>" == "true" ]]; then
-              DEBUG_FLAG="-d"
-            fi
-
-            # Install Act with the specified version, bin-dir, and debug options
-            curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- $BIN_DIR_FLAG $DEBUG_FLAG << parameters.version >>
-
-  create-env-and-secret-file:
-    description: Generate environment and secrets files for Act
-    parameters:
-      env-file:
-        type: string
-        default: /tmp/act.env
-        description: Path to store environment variables file
-      secret-file:
-        type: string
-        default: /tmp/act.secrets
-        description: Path to store secret variables file
-      secrets:
-        type: string
-        default: GITHUB_TOKEN
-        description: Comma-separated list of secret environment variables
-    steps:
-      - run:
-          name: Generate Environment and Secrets Files
-          command: |
-            # Get environment variables directly from the env command
-            echo "Fetching environment variables..."
-            IFS=$'\n'
-            ALL_ENV_VARS=($(env))
-            
-            # Convert the comma-separated secrets parameter into an array
-            IFS=',' read -ra SECRETS \<<< "<< parameters.secrets >>"
-            
-            # Create associative arrays for action and secret variables
-            declare -A ACTION_ENV_VARS
-            declare -A SECRET_ENV_VARS
-            
-            # Process environment variables directly
-            for VAR in "${ALL_ENV_VARS[@]}"; do
-              KEY=${VAR%%=*}
-              VALUE=${VAR#*=}
-              IS_SECRET=false
-              
-              for SECRET in "${SECRETS[@]}"; do
-                if [[ $KEY == "$SECRET" ]]; then
-                  IS_SECRET=true
-                  break
+                # Check if a custom bin directory is set
+                if [[ "<< parameters.bin-dir >>" != "./bin" ]]; then
+                  BIN_DIR_FLAG="-b << parameters.bin-dir >>"
                 fi
-              done
 
-              if [[ $IS_SECRET == true ]]; then
-                SECRET_ENV_VARS[$KEY]=$VALUE
-              else
-                ACTION_ENV_VARS[$KEY]=$VALUE
-              fi
-            done
+                # Enable debug logging if the debug parameter is true
+                if [[ "<< parameters.debug >>" == "true" ]]; then
+                  DEBUG_FLAG="-d"
+                fi
 
-            # Write ACTION_ENV_VARS to the .env file
-            echo "Writing non-sensitive environment variables to << parameters.env-file >>"
-            for KEY in "${!ACTION_ENV_VARS[@]}"; do
-              echo "$KEY=${ACTION_ENV_VARS[$KEY]}" >> << parameters.env-file >>
-            done
-            
-            # Write SECRET_ENV_VARS to the .secrets file
-            echo "Writing sensitive environment variables to << parameters.secret-file >>"
-            for KEY in "${!SECRET_ENV_VARS[@]}"; do
-              echo "$KEY=${SECRET_ENV_VARS[$KEY]}" >> << parameters.secret-file >>
-            done
+                # Install Act with the specified version, bin-dir, and debug options
+                curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash -s -- $BIN_DIR_FLAG $DEBUG_FLAG << parameters.version >>
 
-  create-workflow-file:
-    description: Generate a GitHub Actions-like workflow YAML file
-    parameters:
-      workflow-file:
-        type: string
-        default: /tmp/workflow.yml
-        description: Path to store the generated GitHub Actions-like workflow YAML file
-      action:
-        type: string
-        description: The GitHub Action to execute (e.g. actions/checkout@v2)
-      with:
-        default: ""
-        type: string
-        description: Key-value pairs for the `with` block
-      env:
-        type: string
-        default: ""
-        description: Key-value pairs for the `env` block
-      workflow-name:
-        type: string
-        default: "circleci"
-        description: Name of the workflow
-      workflow-event:
-        type: string
-        default: "push"
-        description: Event that triggers the workflow (e.g. push, pull_request)
-      job-name:
-        type: string
-        default: "action"
-        description: Name of the job
-      runs-on-image:
-        type: string
-        default: "ubuntu-latest"
-        description: Image to run the job on (e.g. ubuntu-latest, windows-latest)
-    steps:
-      - run:
-          name: Generate Workflow YAML
-          command: |
-            # Capture 'with' and 'env' inputs directly
-            WITH_STRING=$(cat \<<EOF
-            << parameters.with >>
-            EOF
-            )
+      create-env-and-secret-file:
+        description: Generate environment and secrets files for Act
+        parameters:
+          env-file:
+            type: string
+            default: /tmp/act.env
+            description: Path to store environment variables file
+          secret-file:
+            type: string
+            default: /tmp/act.secrets
+            description: Path to store secret variables file
+          secrets:
+            type: string
+            default: GITHUB_TOKEN
+            description: Comma-separated list of secret environment variables
+        steps:
+          - run:
+              name: Generate Environment and Secrets Files
+              command: |
+                # Get environment variables directly from the env command
+                echo "Fetching environment variables..."
+                IFS=$'\n'
+                ALL_ENV_VARS=($(env))
+                
+                # Convert the comma-separated secrets parameter into an array
+                IFS=',' read -ra SECRETS \<<< "<< parameters.secrets >>"
+                
+                # Create associative arrays for action and secret variables
+                declare -A ACTION_ENV_VARS
+                declare -A SECRET_ENV_VARS
+                
+                # Process environment variables directly
+                for VAR in "${ALL_ENV_VARS[@]}"; do
+                  KEY=${VAR%%=*}
+                  VALUE=${VAR#*=}
+                  IS_SECRET=false
+                  
+                  for SECRET in "${SECRETS[@]}"; do
+                    if [[ $KEY == "$SECRET" ]]; then
+                      IS_SECRET=true
+                      break
+                    fi
+                  done
 
-            ENV_STRING=$(cat \<<EOF
-            << parameters.env >>
-            EOF
-            )
+                  if [[ $IS_SECRET == true ]]; then
+                    SECRET_ENV_VARS[$KEY]=$VALUE
+                  else
+                    ACTION_ENV_VARS[$KEY]=$VALUE
+                  fi
+                done
 
-            # Format 'with' parameter
-            if [ -n "$WITH_STRING" ]; then
-              formatted_with="$(echo "$WITH_STRING" | sed 's/^/          /')"
-            else
-              formatted_with=""
-            fi
+                # Write ACTION_ENV_VARS to the .env file
+                echo "Writing non-sensitive environment variables to << parameters.env-file >>"
+                for KEY in "${!ACTION_ENV_VARS[@]}"; do
+                  echo "$KEY=${ACTION_ENV_VARS[$KEY]}" >> << parameters.env-file >>
+                done
+                
+                # Write SECRET_ENV_VARS to the .secrets file
+                echo "Writing sensitive environment variables to << parameters.secret-file >>"
+                for KEY in "${!SECRET_ENV_VARS[@]}"; do
+                  echo "$KEY=${SECRET_ENV_VARS[$KEY]}" >> << parameters.secret-file >>
+                done
 
-            # Format 'env' parameter
-            if [ -n "$ENV_STRING" ]; then
-              formatted_env="$(echo "$ENV_STRING" | sed 's/^/          /')"
-            else
-              formatted_env=""
-            fi
+      create-workflow-file:
+        description: Generate a GitHub Actions-like workflow YAML file
+        parameters:
+          workflow-file:
+            type: string
+            default: /tmp/workflow.yml
+            description: Path to store the generated GitHub Actions-like workflow YAML file
+          action:
+            type: string
+            description: The GitHub Action to execute (e.g. actions/checkout@v2)
+          with:
+            default: ""
+            type: string
+            description: Key-value pairs for the `with` block
+          env:
+            type: string
+            default: ""
+            description: Key-value pairs for the `env` block
+          workflow-name:
+            type: string
+            default: "circleci"
+            description: Name of the workflow
+          workflow-event:
+            type: string
+            default: "push"
+            description: Event that triggers the workflow (e.g. push, pull_request)
+          job-name:
+            type: string
+            default: "action"
+            description: Name of the job
+          runs-on-image:
+            type: string
+            default: "ubuntu-latest"
+            description: Image to run the job on (e.g. ubuntu-latest, windows-latest)
+        steps:
+          - run:
+              name: Generate Workflow YAML
+              command: |
+                # Capture 'with' and 'env' inputs directly
+                WITH_STRING=$(cat \<<EOF
+                << parameters.with >>
+                EOF
+                )
 
-            # Generate the workflow YAML file
-            cat \<<EOF > << parameters.workflow-file >>
-            name: << parameters.workflow-name >>
-            on: << parameters.workflow-event >>
-            jobs:
-              << parameters.job-name >>:
-                runs-on: << parameters.runs-on-image >>
-                steps:
-                  - uses: << parameters.action >>
-            $(if [ -n "$formatted_with" ]; then echo "        with:"; echo "$formatted_with"; fi)
-            $(if [ -n "$formatted_env" ]; then echo "        env:"; echo "$formatted_env"; fi)
-            EOF
+                ENV_STRING=$(cat \<<EOF
+                << parameters.env >>
+                EOF
+                )
 
-            # Echo the workflow file for debugging
-            echo "Generated workflow: $(cat << parameters.workflow-file >>)"
-            
-            echo "Generated workflow YAML file at << parameters.workflow-file >>"
+                # Format 'with' parameter
+                if [ -n "$WITH_STRING" ]; then
+                  formatted_with="$(echo "$WITH_STRING" | sed 's/^/          /')"
+                else
+                  formatted_with=""
+                fi
 
-  run-act:
-    description: Run a workflow YAML file using Act 
-    parameters:
-      workflow-file:
-        type: string
-        default: /tmp/workflow.yml
-        description: Path to the workflow file to execute
-      platform:
-        type: string
-        default: ubuntu-latest=node:16-buster-slim
-        description: Custom image to use per platform
-      env-file:
-        type: string
-        default: /tmp/act.env
-        description: Path to the environment variables file
-      secret-file:
-        type: string
-        default: /tmp/act.secrets
-        description: Path to the secret variables file
-      event-file:
-        type: string
-        default: /tmp/act.event
-        description: Path to the event JSON file
-      actor:
-        type: string
-        default: nektos/act
-        description: User that triggered the event
-      bind:
-        type: boolean
-        default: true
-        description: Enables the bind flag which binds working directory to container, rather than copy
-      verbose:
-        type: boolean
-        default: false
-        description: Enables verbose output
-      detect-event:
-        type: boolean
-        default: true
-        description: Automatically detects and uses the first event type in the workflow
-      directory:
-        type: string
-        default: .
-        description: Working directory for the workflow
-      action-offline-mode:
-        type: boolean
-        default: false
-        description: Enable offline mode for actions (runs without fetching actions from remote sources)
-      cache-actions:
-        type: boolean
-        default: true
-        description:  Enables caching of actions using CircleCI caching
-      defaultbranch:
-        type: string
-        default: main
-        description: Specifies the default branch to use
-      job:
-        type: string
-        default: ""
-        description: Specifies a specific job ID to run
-      pull:
-        type: boolean
-        default: true
-        description: Forces pulling of Docker images even if already present
-      rebuild:
-        type: boolean
-        default: true
-        description: Rebuilds local Docker images even if already present
-      remote-name:
-        type: string
-        default: origin
-        description: Specifies the Git remote name for retrieving the repo URL
-      reuse:
-        type: boolean
-        default: false
-        description: Prevents container removal after successful runs for maintaining state
-      input-file:
-        type: string
-        default: .input
-        description: Path to the file containing action inputs
-      var-file:
-        type: string
-        default: .vars
-        description: Path to the file containing variable definitions
-      additional-act-flags:
-        type: string
-        default: ""
-        description: Additional flags to be passed to the `act` CLI
-    steps:
-      - when:
-          condition: << parameters.cache-actions >>
-          steps:
-            - restore_cache:
-                name: Restore Act Cache
-                keys:
-                  - act-cache-{{ checksum "<< parameters.workflow-file >>" }}
-                  - act-cache
-      - run:
-          name: Run Act
-          command: |
-            # Build the base `act` command
-            act_cmd="act"
+                # Format 'env' parameter
+                if [ -n "$ENV_STRING" ]; then
+                  formatted_env="$(echo "$ENV_STRING" | sed 's/^/          /')"
+                else
+                  formatted_env=""
+                fi
 
-            # Add workflow file
-            act_cmd="$act_cmd --workflows << parameters.workflow-file >>"
+                # Generate the workflow YAML file
+                cat \<<EOF > << parameters.workflow-file >>
+                name: << parameters.workflow-name >>
+                on: << parameters.workflow-event >>
+                jobs:
+                  << parameters.job-name >>:
+                    runs-on: << parameters.runs-on-image >>
+                    steps:
+                      - uses: << parameters.action >>
+                $(if [ -n "$formatted_with" ]; then echo "        with:"; echo "$formatted_with"; fi)
+                $(if [ -n "$formatted_env" ]; then echo "        env:"; echo "$formatted_env"; fi)
+                EOF
 
-            # Add platform flag
-            act_cmd="$act_cmd --platform << parameters.platform >>"
+                # Echo the workflow file for debugging
+                echo "Generated workflow: $(cat << parameters.workflow-file >>)"
+                
+                echo "Generated workflow YAML file at << parameters.workflow-file >>"
 
-            # Add env and secret file paths
-            act_cmd="$act_cmd --env-file << parameters.env-file >>"
-            act_cmd="$act_cmd --secret-file << parameters.secret-file >>"
+      run-act:
+        description: Run a workflow YAML file using Act 
+        parameters:
+          workflow-file:
+            type: string
+            default: /tmp/workflow.yml
+            description: Path to the workflow file to execute
+          platform:
+            type: string
+            default: ubuntu-latest=node:16-buster-slim
+            description: Custom image to use per platform
+          env-file:
+            type: string
+            default: /tmp/act.env
+            description: Path to the environment variables file
+          secret-file:
+            type: string
+            default: /tmp/act.secrets
+            description: Path to the secret variables file
+          event-file:
+            type: string
+            default: /tmp/act.event
+            description: Path to the event JSON file
+          actor:
+            type: string
+            default: nektos/act
+            description: User that triggered the event
+          bind:
+            type: boolean
+            default: true
+            description: Enables the bind flag which binds working directory to container, rather than copy
+          verbose:
+            type: boolean
+            default: false
+            description: Enables verbose output
+          detect-event:
+            type: boolean
+            default: true
+            description: Automatically detects and uses the first event type in the workflow
+          directory:
+            type: string
+            default: .
+            description: Working directory for the workflow
+          action-offline-mode:
+            type: boolean
+            default: false
+            description: Enable offline mode for actions (runs without fetching actions from remote sources)
+          cache-actions:
+            type: boolean
+            default: true
+            description:  Enables caching of actions using CircleCI caching
+          defaultbranch:
+            type: string
+            default: main
+            description: Specifies the default branch to use
+          job:
+            type: string
+            default: ""
+            description: Specifies a specific job ID to run
+          pull:
+            type: boolean
+            default: true
+            description: Forces pulling of Docker images even if already present
+          rebuild:
+            type: boolean
+            default: true
+            description: Rebuilds local Docker images even if already present
+          remote-name:
+            type: string
+            default: origin
+            description: Specifies the Git remote name for retrieving the repo URL
+          reuse:
+            type: boolean
+            default: false
+            description: Prevents container removal after successful runs for maintaining state
+          input-file:
+            type: string
+            default: .input
+            description: Path to the file containing action inputs
+          var-file:
+            type: string
+            default: .vars
+            description: Path to the file containing variable definitions
+          additional-act-flags:
+            type: string
+            default: ""
+            description: Additional flags to be passed to the `act` CLI
+        steps:
+          - when:
+              condition: << parameters.cache-actions >>
+              steps:
+                - restore_cache:
+                    name: Restore Act Cache
+                    keys:
+                      - act-cache-{{ checksum "<< parameters.workflow-file >>" }}
+                      - act-cache
+          - run:
+              name: Run Act
+              command: |
+                # Build the base `act` command
+                act_cmd="act"
 
-            # Add optional parameters
-            act_cmd="$act_cmd --directory << parameters.directory >>"
-            act_cmd="$act_cmd --eventpath << parameters.event-file >>"
-            act_cmd="$act_cmd --defaultbranch << parameters.defaultbranch >>"
-            act_cmd="$act_cmd --remote-name << parameters.remote-name >>"
-            act_cmd="$act_cmd --actor << parameters.actor >>"
+                # Add workflow file
+                act_cmd="$act_cmd --workflows << parameters.workflow-file >>"
 
-            if [ -n "<< parameters.job >>" ]; then
-              act_cmd="$act_cmd --job << parameters.job >>"
-            fi
-            if [ -n "<< parameters.input-file >>" ]; then
-              act_cmd="$act_cmd --input-file << parameters.input-file >>"
-            fi
-            if [ -n "<< parameters.var-file >>" ]; then
-              act_cmd="$act_cmd --var-file << parameters.var-file >>"
-            fi
-            if [ << parameters.pull >> = true ]; then
-              act_cmd="$act_cmd --pull"
-            fi
-            if [ << parameters.rebuild >> = true ]; then
-              act_cmd="$act_cmd --rebuild"
-            fi
-            if [ << parameters.reuse >> = true ]; then
-              act_cmd="$act_cmd --reuse"
-            fi
-            if [ << parameters.detect-event >> = true ]; then
-              act_cmd="$act_cmd --detect-event"
-            fi
-            if [ << parameters.bind >> = true ]; then
-              act_cmd="$act_cmd --bind"
-            fi
-            if [ << parameters.verbose >> = true ]; then
-              act_cmd="$act_cmd --verbose"
-            fi
-            if [ << parameters.action-offline-mode >> = true ]; then
-              act_cmd="$act_cmd --action-offline-mode"
-            fi
+                # Add platform flag
+                act_cmd="$act_cmd --platform << parameters.platform >>"
 
-            # Include additional flags if provided
-            if [ -n "<< parameters.additional-act-flags >>" ]; then
-              act_cmd="$act_cmd << parameters.additional-act-flags >>"
-            fi
+                # Add env and secret file paths
+                act_cmd="$act_cmd --env-file << parameters.env-file >>"
+                act_cmd="$act_cmd --secret-file << parameters.secret-file >>"
 
-            # Echo the final command for debugging
-            echo "Running command: $act_cmd"
+                # Add optional parameters
+                act_cmd="$act_cmd --directory << parameters.directory >>"
+                act_cmd="$act_cmd --eventpath << parameters.event-file >>"
+                act_cmd="$act_cmd --defaultbranch << parameters.defaultbranch >>"
+                act_cmd="$act_cmd --remote-name << parameters.remote-name >>"
+                act_cmd="$act_cmd --actor << parameters.actor >>"
 
-            # Run the `act` command
-            eval "$act_cmd"
-      - when:
-          condition: << parameters.cache-actions >>
-          steps:
-            - save_cache:
-                name: Save Act Cache
-                key: act-cache-{{ checksum "<< parameters.workflow-file >>" }}
-                paths:
-                  - ~/.cache/act
+                if [ -n "<< parameters.job >>" ]; then
+                  act_cmd="$act_cmd --job << parameters.job >>"
+                fi
+                if [ -n "<< parameters.input-file >>" ]; then
+                  act_cmd="$act_cmd --input-file << parameters.input-file >>"
+                fi
+                if [ -n "<< parameters.var-file >>" ]; then
+                  act_cmd="$act_cmd --var-file << parameters.var-file >>"
+                fi
+                if [ << parameters.pull >> = true ]; then
+                  act_cmd="$act_cmd --pull"
+                fi
+                if [ << parameters.rebuild >> = true ]; then
+                  act_cmd="$act_cmd --rebuild"
+                fi
+                if [ << parameters.reuse >> = true ]; then
+                  act_cmd="$act_cmd --reuse"
+                fi
+                if [ << parameters.detect-event >> = true ]; then
+                  act_cmd="$act_cmd --detect-event"
+                fi
+                if [ << parameters.bind >> = true ]; then
+                  act_cmd="$act_cmd --bind"
+                fi
+                if [ << parameters.verbose >> = true ]; then
+                  act_cmd="$act_cmd --verbose"
+                fi
+                if [ << parameters.action-offline-mode >> = true ]; then
+                  act_cmd="$act_cmd --action-offline-mode"
+                fi
 
-  act:
-    description: Handles setting up the needed environment and running Act
-    parameters:
-      checkout:
-        type: boolean
-        default: true
-        description: Checkout the CircleCI repository before running Act
-      version:
-        type: string
-        default: "latest"
-        description: The version of Act to install
-      debug:
-        type: boolean
-        default: false
-        description: Enable debug logging for installing Act
-      bin-dir:
-        type: string
-        default: "/home/circleci/bin"
-        description: The directory where Act should be installed
-      env-file:
-        type: string
-        default: /tmp/act.env
-        description: Path to store or fetch the environment variables file
-      secret-file:
-        type: string
-        default: /tmp/act.secrets
-        description: Path to store or fetch the secret variables file
-      secrets:
-        type: string
-        default: GITHUB_TOKEN
-        description: Comma-separated list of secret environment variables
-      workflow-file:
-        type: string
-        default: /tmp/workflow.yml
-        description: Path to store or fetch the workflow file to execute
-      uses:
-        type: string
-        description: The GitHub Action to execute (e.g. actions/checkout@v2)
-      with:
-        default: ""
-        type: string
-        description: Key-value pairs for the `with` block
-      env:
-        type: string
-        default: ""
-        description: Key-value pairs for the `env` block
-      workflow-name:
-        type: string
-        default: "circleci"
-        description: Name of the workflow
-      workflow-event:
-        type: string
-        default: "push"
-        description: Event that triggers the workflow (e.g. push, pull_request)
-      job-name:
-        type: string
-        default: "action"
-        description: Name of the job
-      runs-on-image:
-        type: string
-        default: "ubuntu-latest"
-        description: Image to run the job on (e.g. ubuntu-latest, windows-latest)
-      platform:
-        type: string
-        default: ubuntu-latest=node:16-buster-slim
-        description: Custom image to use per platform
-      event-file:
-        type: string
-        default: /tmp/act.event
-        description: Path to the event JSON file
-      actor:
-        type: string
-        default: nektos/act
-        description: User that triggered the event
-      bind:
-        type: boolean
-        default: true
-        description: Enables the bind flag which binds working directory to container, rather than copy
-      verbose:
-        type: boolean
-        default: false
-        description: Enables verbose output
-      detect-event:
-        type: boolean
-        default: true
-        description: Automatically detects and uses the first event type in the workflow
-      directory:
-        type: string
-        default: .
-        description: Working directory for the workflow
-      action-offline-mode:
-        type: boolean
-        default: false
-        description: Enable offline mode for actions (runs without fetching actions from remote sources)
-      cache-actions:
-        type: boolean
-        default: true
-        description:  Enables caching of GitHub Actions using CircleCI caching
-      defaultbranch:
-        type: string
-        default: main
-        description: Specifies the default branch to use
-      job:
-        type: string
-        default: ""
-        description: Specifies a specific job ID to run
-      pull:
-        type: boolean
-        default: true
-        description: Forces pulling of Docker images even if already present
-      rebuild:
-        type: boolean
-        default: true
-        description: Rebuilds local Docker images even if already present
-      remote-name:
-        type: string
-        default: origin
-        description: Specifies the Git remote name for retrieving the repo URL
-      reuse:
-        type: boolean
-        default: false
-        description: Prevents container removal after successful runs for maintaining state
-      input-file:
-        type: string
-        default: .input
-        description: Path to the file containing action inputs
-      var-file:
-        type: string
-        default: .vars
-        description: Path to the file containing variable definitions
-      additional-act-flags:
-        type: string
-        default: ""
-        description: Additional flags to be passed to the `act` CLI
-      skip-install:
-        type: boolean
-        default: false
-        description: Skips installing Act
-      skip-create-env-and-secret-file:
-        type: boolean
-        default: false
-        description: Skips generating env and secret files
-      skip-create-workflow-file:
-        type: boolean
-        default: false
-        description: Skips creating the workflow file
-    steps:
-      - when:
-          condition: << parameters.checkout >>
-          steps:
-            - checkout
-      - when:
-          condition: << parameters.skip-install >>
-          steps:
-            - install-act:
-                version: << parameters.version >>
-                debug: << parameters.debug >>
-                bin-dir: << parameters.bin-dir >>
-      - when:
-          condition: << parameters.skip-create-env-and-secret-file >>
-          steps:
-            - create-env-and-secret-file:
-                env-file: << parameters.env-file >>
-                secret-file: << parameters.secret-file >>
-                secrets: << parameters.secrets >>
-      - when:
-          condition: << parameters.skip-create-workflow-file >>
-          steps:
-            - create-workflow-file:
-                workflow-file: << parameters.workflow-file >>
-                action: << parameters.uses >>
-                with: << parameters.with >>
-                env: << parameters.env >>
-                workflow-name: << parameters.workflow-name >>
-                workflow-event: << parameters.workflow-event >>
-                job-name: << parameters.job-name >>
-                runs-on-image: << parameters.runs-on-image >>
-      - run-act:
-          workflow-file: << parameters.workflow-file >>
-          platform: << parameters.platform >>
-          env-file: << parameters.env-file >>
-          secret-file: << parameters.secret-file >>
-          event-file: << parameters.event-file >>
-          actor: << parameters.actor >>
-          bind: << parameters.bind >>
-          verbose: << parameters.verbose >>
-          detect-event: << parameters.detect-event >>
-          directory: << parameters.directory >>
-          action-offline-mode: << parameters.action-offline-mode >>
-          cache-actions: << parameters.cache-actions >>
-          defaultbranch: << parameters.defaultbranch >>
-          job: << parameters.job >>
-          pull: << parameters.pull >>
-          rebuild: << parameters.rebuild >>
-          remote-name: << parameters.remote-name >>
-          reuse: << parameters.reuse >>
-          input-file: << parameters.input-file >>
-          var-file: << parameters.var-file >>
-          additional-act-flags: << parameters.additional-act-flags >>
+                # Include additional flags if provided
+                if [ -n "<< parameters.additional-act-flags >>" ]; then
+                  act_cmd="$act_cmd << parameters.additional-act-flags >>"
+                fi
 
+                # Echo the final command for debugging
+                echo "Running command: $act_cmd"
 
-executors:
-  default:
-    description: Default executor environment for running the Act Orb using machine executors
-    parameters:
-      image:
-        type: string
-        default: ubuntu-2404:current
-        description: Specifies the machine image to use for the executor
-      docker_layer_caching:
-        type: boolean
-        default: false
-        description: Enables Docker layer caching during builds
-      resource_class:
-        type: string
-        default: large
-        description: Specifies the resource class for the executor
-    machine:
-      image: << parameters.image >>
-      docker_layer_caching: << parameters.docker_layer_caching >>
-      resource_class: << parameters.resource_class >>
+                # Run the `act` command
+                eval "$act_cmd"
+          - when:
+              condition: << parameters.cache-actions >>
+              steps:
+                - save_cache:
+                    name: Save Act Cache
+                    key: act-cache-{{ checksum "<< parameters.workflow-file >>" }}
+                    paths:
+                      - ~/.cache/act
+
+      act:
+        description: Handles setting up the needed environment and running Act
+        parameters:
+          checkout:
+            type: boolean
+            default: true
+            description: Checkout the CircleCI repository before running Act
+          version:
+            type: string
+            default: "latest"
+            description: The version of Act to install
+          debug:
+            type: boolean
+            default: false
+            description: Enable debug logging for installing Act
+          bin-dir:
+            type: string
+            default: "/home/circleci/bin"
+            description: The directory where Act should be installed
+          env-file:
+            type: string
+            default: /tmp/act.env
+            description: Path to store or fetch the environment variables file
+          secret-file:
+            type: string
+            default: /tmp/act.secrets
+            description: Path to store or fetch the secret variables file
+          secrets:
+            type: string
+            default: GITHUB_TOKEN
+            description: Comma-separated list of secret environment variables
+          workflow-file:
+            type: string
+            default: /tmp/workflow.yml
+            description: Path to store or fetch the workflow file to execute
+          uses:
+            type: string
+            description: The GitHub Action to execute (e.g. actions/checkout@v2)
+          with:
+            default: ""
+            type: string
+            description: Key-value pairs for the `with` block
+          env:
+            type: string
+            default: ""
+            description: Key-value pairs for the `env` block
+          workflow-name:
+            type: string
+            default: "circleci"
+            description: Name of the workflow
+          workflow-event:
+            type: string
+            default: "push"
+            description: Event that triggers the workflow (e.g. push, pull_request)
+          job-name:
+            type: string
+            default: "action"
+            description: Name of the job
+          runs-on-image:
+            type: string
+            default: "ubuntu-latest"
+            description: Image to run the job on (e.g. ubuntu-latest, windows-latest)
+          platform:
+            type: string
+            default: ubuntu-latest=node:16-buster-slim
+            description: Custom image to use per platform
+          event-file:
+            type: string
+            default: /tmp/act.event
+            description: Path to the event JSON file
+          actor:
+            type: string
+            default: nektos/act
+            description: User that triggered the event
+          bind:
+            type: boolean
+            default: true
+            description: Enables the bind flag which binds working directory to container, rather than copy
+          verbose:
+            type: boolean
+            default: false
+            description: Enables verbose output
+          detect-event:
+            type: boolean
+            default: true
+            description: Automatically detects and uses the first event type in the workflow
+          directory:
+            type: string
+            default: .
+            description: Working directory for the workflow
+          action-offline-mode:
+            type: boolean
+            default: false
+            description: Enable offline mode for actions (runs without fetching actions from remote sources)
+          cache-actions:
+            type: boolean
+            default: true
+            description:  Enables caching of GitHub Actions using CircleCI caching
+          defaultbranch:
+            type: string
+            default: main
+            description: Specifies the default branch to use
+          job:
+            type: string
+            default: ""
+            description: Specifies a specific job ID to run
+          pull:
+            type: boolean
+            default: true
+            description: Forces pulling of Docker images even if already present
+          rebuild:
+            type: boolean
+            default: true
+            description: Rebuilds local Docker images even if already present
+          remote-name:
+            type: string
+            default: origin
+            description: Specifies the Git remote name for retrieving the repo URL
+          reuse:
+            type: boolean
+            default: false
+            description: Prevents container removal after successful runs for maintaining state
+          input-file:
+            type: string
+            default: .input
+            description: Path to the file containing action inputs
+          var-file:
+            type: string
+            default: .vars
+            description: Path to the file containing variable definitions
+          additional-act-flags:
+            type: string
+            default: ""
+            description: Additional flags to be passed to the `act` CLI
+          skip-install:
+            type: boolean
+            default: false
+            description: Skips installing Act
+          skip-create-env-and-secret-file:
+            type: boolean
+            default: false
+            description: Skips generating env and secret files
+          skip-create-workflow-file:
+            type: boolean
+            default: false
+            description: Skips creating the workflow file
+        steps:
+          - when:
+              condition: << parameters.checkout >>
+              steps:
+                - checkout
+          - when:
+              condition: << parameters.skip-install >>
+              steps:
+                - install-act:
+                    version: << parameters.version >>
+                    debug: << parameters.debug >>
+                    bin-dir: << parameters.bin-dir >>
+          - when:
+              condition: << parameters.skip-create-env-and-secret-file >>
+              steps:
+                - create-env-and-secret-file:
+                    env-file: << parameters.env-file >>
+                    secret-file: << parameters.secret-file >>
+                    secrets: << parameters.secrets >>
+          - when:
+              condition: << parameters.skip-create-workflow-file >>
+              steps:
+                - create-workflow-file:
+                    workflow-file: << parameters.workflow-file >>
+                    action: << parameters.uses >>
+                    with: << parameters.with >>
+                    env: << parameters.env >>
+                    workflow-name: << parameters.workflow-name >>
+                    workflow-event: << parameters.workflow-event >>
+                    job-name: << parameters.job-name >>
+                    runs-on-image: << parameters.runs-on-image >>
+          - run-act:
+              workflow-file: << parameters.workflow-file >>
+              platform: << parameters.platform >>
+              env-file: << parameters.env-file >>
+              secret-file: << parameters.secret-file >>
+              event-file: << parameters.event-file >>
+              actor: << parameters.actor >>
+              bind: << parameters.bind >>
+              verbose: << parameters.verbose >>
+              detect-event: << parameters.detect-event >>
+              directory: << parameters.directory >>
+              action-offline-mode: << parameters.action-offline-mode >>
+              cache-actions: << parameters.cache-actions >>
+              defaultbranch: << parameters.defaultbranch >>
+              job: << parameters.job >>
+              pull: << parameters.pull >>
+              rebuild: << parameters.rebuild >>
+              remote-name: << parameters.remote-name >>
+              reuse: << parameters.reuse >>
+              input-file: << parameters.input-file >>
+              var-file: << parameters.var-file >>
+              additional-act-flags: << parameters.additional-act-flags >>
 
 
-jobs:
-  act:
-    description: Handles setting up the needed environment and running Act using the default executor
-    parameters:
-      checkout:
-        type: boolean
-        default: true
-        description: Checkout the CircleCI repository before running Act
-      version:
-        type: string
-        default: "latest"
-        description: The version of Act to install
-      debug:
-        type: boolean
-        default: false
-        description: Enable debug logging for installing Act
-      bin-dir:
-        type: string
-        default: "/home/circleci/bin"
-        description: The directory where Act should be installed
-      env-file:
-        type: string
-        default: /tmp/act.env
-        description: Path to store or fetch the environment variables file
-      secret-file:
-        type: string
-        default: /tmp/act.secrets
-        description: Path to store or fetch the secret variables file
-      secrets:
-        type: string
-        default: GITHUB_TOKEN
-        description: Comma-separated list of secret environment variables
-      workflow-file:
-        type: string
-        default: /tmp/workflow.yml
-        description: Path to store or fetch the workflow file to execute
-      uses:
-        type: string
-        description: The GitHub Action to execute (e.g. actions/checkout@v2)
-      with:
-        default: ""
-        type: string
-        description: Key-value pairs for the `with` block
-      env:
-        type: string
-        default: ""
-        description: Key-value pairs for the `env` block
-      workflow-name:
-        type: string
-        default: "circleci"
-        description: Name of the workflow
-      workflow-event:
-        type: string
-        default: "push"
-        description: Event that triggers the workflow (e.g. push, pull_request)
-      job-name:
-        type: string
-        default: "action"
-        description: Name of the job
-      runs-on-image:
-        type: string
-        default: "ubuntu-latest"
-        description: Image to run the job on (e.g. ubuntu-latest, windows-latest)
-      platform:
-        type: string
-        default: ubuntu-latest=node:16-buster-slim
-        description: Custom image to use per platform
-      event-file:
-        type: string
-        default: /tmp/act.event
-        description: Path to the event JSON file
-      actor:
-        type: string
-        default: nektos/act
-        description: User that triggered the event
-      bind:
-        type: boolean
-        default: true
-        description: Enables the bind flag which binds working directory to container, rather than copy
-      verbose:
-        type: boolean
-        default: false
-        description: Enables verbose output
-      detect-event:
-        type: boolean
-        default: true
-        description: Automatically detects and uses the first event type in the workflow
-      directory:
-        type: string
-        default: .
-        description: Working directory for the workflow
-      action-offline-mode:
-        type: boolean
-        default: false
-        description: Enable offline mode for actions (runs without fetching actions from remote sources)
-      cache-actions:
-        type: boolean
-        default: true
-        description:  Enables caching of GitHub Actions using CircleCI caching
-      defaultbranch:
-        type: string
-        default: main
-        description: Specifies the default branch to use
-      job:
-        type: string
-        default: ""
-        description: Specifies a specific job ID to run
-      pull:
-        type: boolean
-        default: true
-        description: Forces pulling of Docker images even if already present
-      rebuild:
-        type: boolean
-        default: true
-        description: Rebuilds local Docker images even if already present
-      remote-name:
-        type: string
-        default: origin
-        description: Specifies the Git remote name for retrieving the repo URL
-      reuse:
-        type: boolean
-        default: false
-        description: Prevents container removal after successful runs for maintaining state
-      input-file:
-        type: string
-        default: .input
-        description: Path to the file containing action inputs
-      var-file:
-        type: string
-        default: .vars
-        description: Path to the file containing variable definitions
-      additional-act-flags:
-        type: string
-        default: ""
-        description: Additional flags to be passed to the `act` CLI
-      skip-install:
-        type: boolean
-        default: false
-        description: Skips installing Act
-      skip-create-env-and-secret-file:
-        type: boolean
-        default: false
-        description: Skips generating env and secret files
-      skip-create-workflow-file:
-        type: boolean
-        default: false
-        description: Skips creating the workflow file
-      image:
-        type: string
-        default: ubuntu-2404:current
-        description: Specifies the machine image to use for the executor
-      docker_layer_caching:
-        type: boolean
-        default: false
-        description: Enables Docker layer caching during builds
-      resource_class:
-        type: string
-        default: medium
-        description: Specifies the resource class for the executor
-    executor: 
-      name: default
-      image: << parameters.image >>
-      docker_layer_caching: << parameters.docker_layer_caching >>
-      resource_class: << parameters.resource_class >>>
-    steps:
-      - when:
-          condition: << parameters.checkout >>
-          steps:
-            - checkout
-      - when:
-          condition: << parameters.skip-install >>
-          steps:
-            - install-act:
-                version: << parameters.version >>
-                debug: << parameters.debug >>
-                bin-dir: << parameters.bin-dir >>
-      - when:
-          condition: << parameters.skip-create-env-and-secret-file >>
-          steps:
-            - create-env-and-secret-file:
-                env-file: << parameters.env-file >>
-                secret-file: << parameters.secret-file >>
-                secrets: << parameters.secrets >>
-      - when:
-          condition: << parameters.skip-create-workflow-file >>
-          steps:
-            - create-workflow-file:
-                workflow-file: << parameters.workflow-file >>
-                action: << parameters.uses >>
-                with: << parameters.with >>
-                env: << parameters.env >>
-                workflow-name: << parameters.workflow-name >>
-                workflow-event: << parameters.workflow-event >>
-                job-name: << parameters.job-name >>
-                runs-on-image: << parameters.runs-on-image >>
-      - run-act:
-          workflow-file: << parameters.workflow-file >>
-          platform: << parameters.platform >>
-          env-file: << parameters.env-file >>
-          secret-file: << parameters.secret-file >>
-          event-file: << parameters.event-file >>
-          actor: << parameters.actor >>
-          bind: << parameters.bind >>
-          verbose: << parameters.verbose >>
-          detect-event: << parameters.detect-event >>
-          directory: << parameters.directory >>
-          action-offline-mode: << parameters.action-offline-mode >>
-          cache-actions: << parameters.cache-actions >>
-          defaultbranch: << parameters.defaultbranch >>
-          job: << parameters.job >>
-          pull: << parameters.pull >>
-          rebuild: << parameters.rebuild >>
-          remote-name: << parameters.remote-name >>
-          reuse: << parameters.reuse >>
-          input-file: << parameters.input-file >>
-          var-file: << parameters.var-file >>
-          additional-act-flags: << parameters.additional-act-flags >>
+    executors:
+      default:
+        description: Default executor environment for running the Act Orb using machine executors
+        parameters:
+          image:
+            type: string
+            default: ubuntu-2404:current
+            description: Specifies the machine image to use for the executor
+          docker_layer_caching:
+            type: boolean
+            default: false
+            description: Enables Docker layer caching during builds
+          resource_class:
+            type: string
+            default: large
+            description: Specifies the resource class for the executor
+        machine:
+          image: << parameters.image >>
+          docker_layer_caching: << parameters.docker_layer_caching >>
+          resource_class: << parameters.resource_class >>
+
+
+    jobs:
+      act:
+        description: Handles setting up the needed environment and running Act using the default executor
+        parameters:
+          checkout:
+            type: boolean
+            default: true
+            description: Checkout the CircleCI repository before running Act
+          version:
+            type: string
+            default: "latest"
+            description: The version of Act to install
+          debug:
+            type: boolean
+            default: false
+            description: Enable debug logging for installing Act
+          bin-dir:
+            type: string
+            default: "/home/circleci/bin"
+            description: The directory where Act should be installed
+          env-file:
+            type: string
+            default: /tmp/act.env
+            description: Path to store or fetch the environment variables file
+          secret-file:
+            type: string
+            default: /tmp/act.secrets
+            description: Path to store or fetch the secret variables file
+          secrets:
+            type: string
+            default: GITHUB_TOKEN
+            description: Comma-separated list of secret environment variables
+          workflow-file:
+            type: string
+            default: /tmp/workflow.yml
+            description: Path to store or fetch the workflow file to execute
+          uses:
+            type: string
+            description: The GitHub Action to execute (e.g. actions/checkout@v2)
+          with:
+            default: ""
+            type: string
+            description: Key-value pairs for the `with` block
+          env:
+            type: string
+            default: ""
+            description: Key-value pairs for the `env` block
+          workflow-name:
+            type: string
+            default: "circleci"
+            description: Name of the workflow
+          workflow-event:
+            type: string
+            default: "push"
+            description: Event that triggers the workflow (e.g. push, pull_request)
+          job-name:
+            type: string
+            default: "action"
+            description: Name of the job
+          runs-on-image:
+            type: string
+            default: "ubuntu-latest"
+            description: Image to run the job on (e.g. ubuntu-latest, windows-latest)
+          platform:
+            type: string
+            default: ubuntu-latest=node:16-buster-slim
+            description: Custom image to use per platform
+          event-file:
+            type: string
+            default: /tmp/act.event
+            description: Path to the event JSON file
+          actor:
+            type: string
+            default: nektos/act
+            description: User that triggered the event
+          bind:
+            type: boolean
+            default: true
+            description: Enables the bind flag which binds working directory to container, rather than copy
+          verbose:
+            type: boolean
+            default: false
+            description: Enables verbose output
+          detect-event:
+            type: boolean
+            default: true
+            description: Automatically detects and uses the first event type in the workflow
+          directory:
+            type: string
+            default: .
+            description: Working directory for the workflow
+          action-offline-mode:
+            type: boolean
+            default: false
+            description: Enable offline mode for actions (runs without fetching actions from remote sources)
+          cache-actions:
+            type: boolean
+            default: true
+            description:  Enables caching of GitHub Actions using CircleCI caching
+          defaultbranch:
+            type: string
+            default: main
+            description: Specifies the default branch to use
+          job:
+            type: string
+            default: ""
+            description: Specifies a specific job ID to run
+          pull:
+            type: boolean
+            default: true
+            description: Forces pulling of Docker images even if already present
+          rebuild:
+            type: boolean
+            default: true
+            description: Rebuilds local Docker images even if already present
+          remote-name:
+            type: string
+            default: origin
+            description: Specifies the Git remote name for retrieving the repo URL
+          reuse:
+            type: boolean
+            default: false
+            description: Prevents container removal after successful runs for maintaining state
+          input-file:
+            type: string
+            default: .input
+            description: Path to the file containing action inputs
+          var-file:
+            type: string
+            default: .vars
+            description: Path to the file containing variable definitions
+          additional-act-flags:
+            type: string
+            default: ""
+            description: Additional flags to be passed to the `act` CLI
+          skip-install:
+            type: boolean
+            default: false
+            description: Skips installing Act
+          skip-create-env-and-secret-file:
+            type: boolean
+            default: false
+            description: Skips generating env and secret files
+          skip-create-workflow-file:
+            type: boolean
+            default: false
+            description: Skips creating the workflow file
+          image:
+            type: string
+            default: ubuntu-2404:current
+            description: Specifies the machine image to use for the executor
+          docker_layer_caching:
+            type: boolean
+            default: false
+            description: Enables Docker layer caching during builds
+          resource_class:
+            type: string
+            default: medium
+            description: Specifies the resource class for the executor
+        executor: 
+          name: default
+          image: << parameters.image >>
+          docker_layer_caching: << parameters.docker_layer_caching >>
+          resource_class: << parameters.resource_class >>>
+        steps:
+          - when:
+              condition: << parameters.checkout >>
+              steps:
+                - checkout
+          - when:
+              condition: << parameters.skip-install >>
+              steps:
+                - install-act:
+                    version: << parameters.version >>
+                    debug: << parameters.debug >>
+                    bin-dir: << parameters.bin-dir >>
+          - when:
+              condition: << parameters.skip-create-env-and-secret-file >>
+              steps:
+                - create-env-and-secret-file:
+                    env-file: << parameters.env-file >>
+                    secret-file: << parameters.secret-file >>
+                    secrets: << parameters.secrets >>
+          - when:
+              condition: << parameters.skip-create-workflow-file >>
+              steps:
+                - create-workflow-file:
+                    workflow-file: << parameters.workflow-file >>
+                    action: << parameters.uses >>
+                    with: << parameters.with >>
+                    env: << parameters.env >>
+                    workflow-name: << parameters.workflow-name >>
+                    workflow-event: << parameters.workflow-event >>
+                    job-name: << parameters.job-name >>
+                    runs-on-image: << parameters.runs-on-image >>
+          - run-act:
+              workflow-file: << parameters.workflow-file >>
+              platform: << parameters.platform >>
+              env-file: << parameters.env-file >>
+              secret-file: << parameters.secret-file >>
+              event-file: << parameters.event-file >>
+              actor: << parameters.actor >>
+              bind: << parameters.bind >>
+              verbose: << parameters.verbose >>
+              detect-event: << parameters.detect-event >>
+              directory: << parameters.directory >>
+              action-offline-mode: << parameters.action-offline-mode >>
+              cache-actions: << parameters.cache-actions >>
+              defaultbranch: << parameters.defaultbranch >>
+              job: << parameters.job >>
+              pull: << parameters.pull >>
+              rebuild: << parameters.rebuild >>
+              remote-name: << parameters.remote-name >>
+              reuse: << parameters.reuse >>
+              input-file: << parameters.input-file >>
+              var-file: << parameters.var-file >>
+              additional-act-flags: << parameters.additional-act-flags >>
 
 
 workflows:
   main:
     jobs:
-      - act:
+      - act/act:
           uses: aquasecurity/trivy-action@master
           with: |
             scan-type: fs
@@ -806,7 +808,7 @@ workflows:
           verbose: true
           platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
           context: act
-      - act:
+      - act/act:
           name: "Hello world Example"
           uses: actions/hello-world-javascript-action@v1.1
           with: |
