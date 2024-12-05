@@ -285,32 +285,56 @@ orbs:
                 # Build the base `act` command
                 act_cmd="act"
 
-                # Add workflow file
-                act_cmd="$act_cmd --workflows << parameters.workflow-file >>"
+                if [ ! -f "<< parameters.workflow-file >>" ]; then
+                  echo "Error: Workflow file not found at path '<< parameters.workflow-file >>'."
+                  exit 1
+                else
+                  act_cmd="$act_cmd --workflows << parameters.workflow-file >>"
+                fi
 
-                # Add platform flag
+                if [ ! -f "<< parameters.env-file >>" ]; then
+                  echo "Warning: Env file not found at << parameters.env-file >>. Skipping..."
+                else
+                  act_cmd="$act_cmd --env-file << parameters.env-file >>"
+                fi
+
+                if [ ! -f "<< parameters.secret-file >>" ]; then
+                  echo "Warning: Secret file not found at << parameters.secret-file >>. Skipping..."
+                else
+                  act_cmd="$act_cmd --secret << parameters.secret-file >>"
+                fi
+
+                if [ ! -f "<< parameters.input-file >>" ]; then
+                  echo "Warning: Input file not found at << parameters.input-file >>. Skipping..."
+                else
+                  act_cmd="$act_cmd --input-file << parameters.input-file >>"
+                fi
+
+                if [ ! -f "<< parameters.var-file >>" ]; then
+                  echo "Warning: Var file not found at << parameters.var-file >>. Skipping..."
+                else
+                  act_cmd="$act_cmd --var-file << parameters.var-file >>"
+                fi
+
+                if [ ! -f "<< parameters.event-file >>" ]; then
+                  echo "Warning: Event file not found at << parameters.event-file >>. Skipping..."
+                else
+                  act_cmd="$act_cmd --eventpath << parameters.event-file >>"
+                fi
+
+                # Add parameters with valid defaults
                 act_cmd="$act_cmd --platform << parameters.platform >>"
-
-                # Add env and secret file paths
-                act_cmd="$act_cmd --env-file << parameters.env-file >>"
-                act_cmd="$act_cmd --secret-file << parameters.secret-file >>"
-
-                # Add optional parameters
                 act_cmd="$act_cmd --directory << parameters.directory >>"
-                act_cmd="$act_cmd --eventpath << parameters.event-file >>"
                 act_cmd="$act_cmd --defaultbranch << parameters.defaultbranch >>"
                 act_cmd="$act_cmd --remote-name << parameters.remote-name >>"
                 act_cmd="$act_cmd --actor << parameters.actor >>"
 
+                # Check for job 
                 if [ -n "<< parameters.job >>" ]; then
                   act_cmd="$act_cmd --job << parameters.job >>"
                 fi
-                if [ -n "<< parameters.input-file >>" ]; then
-                  act_cmd="$act_cmd --input-file << parameters.input-file >>"
-                fi
-                if [ -n "<< parameters.var-file >>" ]; then
-                  act_cmd="$act_cmd --var-file << parameters.var-file >>"
-                fi
+
+                # Check boolean flags
                 if [ << parameters.pull >> = true ]; then
                   act_cmd="$act_cmd --pull"
                 fi
@@ -743,44 +767,22 @@ orbs:
           # docker_layer_caching: << parameters.docker_layer_caching >>
           # resource_class: << parameters.resource_class >>>
         steps:
-          - when:
-              condition: << parameters.checkout >>
-              steps:
-                - checkout
-          - when:
-              condition: 
-                not: << parameters.skip-install >>
-              steps:
-                - install-act:
-                    version: << parameters.version >>
-                    debug: << parameters.debug >>
-                    bin-dir: << parameters.bin-dir >>
-          - when:
-              condition: 
-                not: << parameters.skip-create-env-and-secret-file >>
-              steps:
-                - create-env-and-secret-file:
-                    env-file: << parameters.env-file >>
-                    secret-file: << parameters.secret-file >>
-                    secrets: << parameters.secrets >>
-          - when:
-              condition: 
-                not: << parameters.skip-create-workflow-file >>
-              steps:
-                - create-workflow-file:
-                    workflow-file: << parameters.workflow-file >>
-                    action: << parameters.uses >>
-                    with: << parameters.with >>
-                    env: << parameters.env >>
-                    workflow-name: << parameters.workflow-name >>
-                    workflow-event: << parameters.workflow-event >>
-                    job-name: << parameters.job-name >>
-                    runs-on-image: << parameters.runs-on-image >>
-          - run-act:
-              workflow-file: << parameters.workflow-file >>
-              platform: << parameters.platform >>
+          - act:
+              version: << parameters.version >>
+              debug: << parameters.debug >>
+              bin-dir: << parameters.bin-dir >>
               env-file: << parameters.env-file >>
               secret-file: << parameters.secret-file >>
+              secrets: << parameters.secrets >>
+              workflow-file: << parameters.workflow-file >>
+              uses: << parameters.uses >>
+              with: << parameters.with >>
+              env: << parameters.env >>
+              workflow-name: << parameters.workflow-name >>
+              workflow-event: << parameters.workflow-event >>
+              job-name: << parameters.job-name >>
+              runs-on-image: << parameters.runs-on-image >>
+              platform: << parameters.platform >>
               event-file: << parameters.event-file >>
               actor: << parameters.actor >>
               bind: << parameters.bind >>
