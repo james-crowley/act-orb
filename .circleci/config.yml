@@ -790,6 +790,9 @@ orbs:
               input-file: << parameters.input-file >>
               var-file: << parameters.var-file >>
               additional-act-flags: << parameters.additional-act-flags >>
+              skip-install: << parameters.skip-install >>
+              skip-create-env-and-secret-file: << parameters.skip-create-env-and-secret-file >>
+              skip-create-workflow-file: << parameters.skip-create-workflow-file >>
 
 
     examples:
@@ -1005,7 +1008,7 @@ workflows:
       - simple_command_usage
       - act/act:
           name: Passing in workflow file
-          workflow-file: ./hello-word.yml
+          workflow-file: ./hello-world.yml
           skip-create-workflow-file: true
       - act/act:
           name: Override executor
