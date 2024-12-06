@@ -814,7 +814,7 @@ workflows:
             output: report.sarif
             scanners: vuln,secret,misconfig,license
           verbose: true
-          platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+          #platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
           context: act
       - act/act:
           name: "Hello world Example"
@@ -823,3 +823,4 @@ workflows:
             who-to-greet: "Mona the Octocat"
           env: |
             hello: world
+          verbose: true
