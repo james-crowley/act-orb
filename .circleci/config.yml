@@ -749,20 +749,24 @@ orbs:
             type: boolean
             default: false
             description: Skips creating the workflow file
-          image:
-            type: string
-            default: ubuntu-2404:current
-            description: Specifies the machine image to use for the executor
-          docker_layer_caching:
-            type: boolean
-            default: false
-            description: Enables Docker layer caching during builds
-          resource_class:
-            type: string
-            default: medium
-            description: Specifies the resource class for the executor
-        executor: 
-          name: default
+          executor:
+            type: executor
+            default: act/default
+            description: The type of executor to use with Act
+          # image:
+          #   type: string
+          #   default: ubuntu-2404:current
+          #   description: Specifies the machine image to use for the executor
+          # docker_layer_caching:
+          #   type: boolean
+          #   default: false
+          #   description: Enables Docker layer caching during builds
+          # resource_class:
+          #   type: string
+          #   default: medium
+          #   description: Specifies the resource class for the executor
+        executor: << parameters.executor >>
+          # name: act/default
           # image: << parameters.image >>
           # docker_layer_caching: << parameters.docker_layer_caching >>
           # resource_class: << parameters.resource_class >>>
@@ -822,5 +826,5 @@ workflows:
           with: |
             who-to-greet: "Mona the Octocat"
           env: |
-            hello: world
           verbose: true
+            hello: world
