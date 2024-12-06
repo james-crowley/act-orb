@@ -3,7 +3,7 @@ version: 2.1
 orbs:
   act:
     commands:
-      install-act:
+      install:
         description: Install Act for running GitHub Actions locally
         parameters:
           version:
@@ -53,7 +53,7 @@ orbs:
           secrets:
             type: string
             default: GITHUB_TOKEN
-            description: Comma-separated list of secret environment variables
+            description: A comma-separated list of environment variables treated as secrets
         steps:
           - run:
               name: Generate Environment and Secrets Files
@@ -217,7 +217,7 @@ orbs:
           verbose:
             type: boolean
             default: false
-            description: Enables verbose output
+            description: Enables detailed output logs
           detect-event:
             type: boolean
             default: true
@@ -275,7 +275,7 @@ orbs:
               condition: << parameters.cache-actions >>
               steps:
                 - restore_cache:
-                    name: Restore Act Cache
+                    name: Restoring cache for Act...
                     keys:
                       - act-cache-{{ checksum "<< parameters.workflow-file >>" }}
                       - act-cache
@@ -371,7 +371,7 @@ orbs:
               condition: << parameters.cache-actions >>
               steps:
                 - save_cache:
-                    name: Save Act Cache
+                    name: Saving cache for Act...
                     key: act-cache-{{ checksum "<< parameters.workflow-file >>" }}
                     paths:
                       - ~/.cache/act
@@ -406,13 +406,14 @@ orbs:
           secrets:
             type: string
             default: GITHUB_TOKEN
-            description: Comma-separated list of secret environment variables
+            description: A comma-separated list of environment variables treated as secrets
           workflow-file:
             type: string
             default: /tmp/workflow.yml
             description: Path to store or fetch the workflow file to execute
           uses:
             type: string
+            default: ""
             description: The GitHub Action to execute (e.g. actions/checkout@v2)
           with:
             default: ""
@@ -457,7 +458,7 @@ orbs:
           verbose:
             type: boolean
             default: false
-            description: Enables verbose output
+            description: Enables detailed output logs
           detect-event:
             type: boolean
             default: true
@@ -531,7 +532,7 @@ orbs:
               condition: 
                 not: << parameters.skip-install >>
               steps:
-                - install-act:
+                - install:
                     version: << parameters.version >>
                     debug: << parameters.debug >>
                     bin-dir: << parameters.bin-dir >>
@@ -633,13 +634,14 @@ orbs:
           secrets:
             type: string
             default: GITHUB_TOKEN
-            description: Comma-separated list of secret environment variables
+            description: A comma-separated list of environment variables treated as secrets
           workflow-file:
             type: string
             default: /tmp/workflow.yml
             description: Path to store or fetch the workflow file to execute
           uses:
             type: string
+            default: ""
             description: The GitHub Action to execute (e.g. actions/checkout@v2)
           with:
             default: ""
@@ -684,7 +686,7 @@ orbs:
           verbose:
             type: boolean
             default: false
-            description: Enables verbose output
+            description: Enables detailed output logs
           detect-event:
             type: boolean
             default: true
@@ -753,23 +755,7 @@ orbs:
             type: executor
             default: default
             description: The type of executor to use with Act
-          # image:
-          #   type: string
-          #   default: ubuntu-2404:current
-          #   description: Specifies the machine image to use for the executor
-          # docker_layer_caching:
-          #   type: boolean
-          #   default: false
-          #   description: Enables Docker layer caching during builds
-          # resource_class:
-          #   type: string
-          #   default: medium
-          #   description: Specifies the resource class for the executor
         executor: << parameters.executor >>
-          # name: act/default
-          # image: << parameters.image >>
-          # docker_layer_caching: << parameters.docker_layer_caching >>
-          # resource_class: << parameters.resource_class >>>
         steps:
           - act:
               version: << parameters.version >>
@@ -806,6 +792,191 @@ orbs:
               additional-act-flags: << parameters.additional-act-flags >>
 
 
+    examples:
+      simple_act_usage:
+        description: |
+          Run a GitHub Action using the `act` orb. This example utilizes the job built into the orb.
+          This will run the `actions/hello-world-javascript-action` action with the specified `with` inputs and `env` variables.
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          workflows:
+            main:
+              jobs:
+                - act/act:
+                    name: "Hello World Javascript Action"
+                    uses: actions/hello-world-javascript-action@v1.1
+                    with: |
+                      who-to-greet: "Mona the Octocat"
+                    env: |
+                      hello-world: "example-value"
+
+      simple_command_usage:
+        description: |
+          Run a GitHub Action using the `act` orb. This example utilizes the command built into the orb, which requires the users to specify the execution environment.
+          This will run the `actions/hello-world-javascript-action` action with the specified `with` inputs and `env` variables.
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          jobs:
+            simple_command_usage:
+              machine:
+                - image: ubuntu-2404:current
+              resource_class: arm.large
+              steps:
+                - act/act:
+                    uses: actions/hello-world-javascript-action@v1.1
+                    with: |
+                      who-to-greet: "Mona the Octocat"
+                    env: |
+                      hello-world: "example-value"
+          workflows:
+            main:
+              jobs:
+                - simple_command_usage
+
+      passing_workflow_file:
+        description: |
+          Skip workflow file generation and pass a pre-existing GitHub Action workflow file to the Act job.
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          workflows:
+            main:
+              jobs:
+                - act/act:
+                    workflow-file: .github/workflows/workflow.yml
+                    skip-create-workflow-file: true
+
+      avoid_token_error:
+        description: |
+          GitHub automatically provides a GITHUB_TOKEN secret when running workflows inside GitHub. 
+          If your workflow fails with an error about token, it most likely requires GITHUB_TOKEN to be set up. 
+          If your workflow depends on this token, you need to create a personal access token and pass it to the Act job.
+          Please utilizes CircleCI's built in secret management and set GITHUB_TOKEN as environment variable. In this example
+          CircleCI's contexts are used to inject the GITHUB_TOKEN secret into the Act job.
+
+          Please see Act's documentation for more details on injecting secrets: https://nektosact.com/usage/index.html?highlight=matrix#secrets
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          workflows:
+            main:
+              jobs:
+                - act/act:
+                    uses: aquasecurity/trivy-action@master
+                    with: |
+                      scan-type: fs
+                      ignore-unfixed: true
+                      format: sarif
+                      output: report.sarif
+                      scanners: vuln,secret,misconfig,license
+                    platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+                    context: act
+
+      override_default_platform_image:
+        description: |
+          GitHub Actions offers managed virtual environments for running workflows. 
+          In order for act to run your workflows locally, it must run a container for the runner defined in your workflow file.
+          The default images do not contain all the tools that GitHub Actions offers by default in their runners due to size constraints. 
+          You can override the default container by specifying a different image in the `platform` parameter.
+
+          Please see Act's documentation for more details on available images: https://nektosact.com/usage/runners.html#default-runners-are-intentionally-incomplete
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          workflows:
+            main:
+              jobs:
+                - act/act:
+                    uses: aquasecurity/trivy-action@master
+                    with: |
+                      scan-type: fs
+                      ignore-unfixed: true
+                      format: sarif
+                      output: report.sarif
+                      scanners: vuln,secret,misconfig,license
+                    platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+                    context: act
+
+      override_executor:
+        description: |
+          An example of overriding the machine executor for a job. This can be useful if you need to run action on a specific machine type.
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          workflows:
+            main:
+              jobs:
+                - act/act:
+                    uses: actions/hello-world-javascript-action@v1.1
+                    with: |
+                      who-to-greet: "Mona the Octocat"
+                    env: |
+                      hello: world
+                    executor:
+                      image: android:2024.11.1
+                      resource_class: medium 
+                      docker_layer_caching: true
+
+      run_on_remote_docker:
+        description: |
+          Run a GitHub Action using the `act` orb on a remote Docker container. The default executor is `machine` but Act will work
+          with the `docker` executor if you enable remote docker.
+        usage:
+          version: "2.1"
+          orbs:
+            act: circleci/act@x.y.z
+          jobs:
+            run_on_remote_docker:
+              docker:
+                - image: cimg/base:current
+              steps:
+                - setup_remote_docker
+                - act/act:
+                    uses: actions/hello-world-javascript-action@v1.1
+                    with: |
+                      who-to-greet: "Mona the Octocat"
+                    env: |
+                      hello-world: "example-value"
+          workflows:
+            main:
+              jobs:
+                - run_on_remote_docker
+
+
+jobs:
+  simple_command_usage:
+    machine:
+      image: ubuntu-2404:current
+    resource_class: arm.large
+    steps:
+      - act/act:
+          uses: actions/hello-world-javascript-action@v1.1
+          with: |
+            who-to-greet: "Mona the Octocat"
+          env: |
+            hello-world: "example-value"
+
+  run_on_remote_docker:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - setup_remote_docker
+      - act/act:
+          uses: actions/hello-world-javascript-action@v1.1
+          with: |
+            who-to-greet: "Mona the Octocat"
+          env: |
+            hello-world: "example-value"
+
+
 workflows:
   main:
     jobs:
@@ -831,3 +1002,22 @@ workflows:
             who-to-greet: "Mona the Octocat"
           env: |
             hello: world
+      - simple_command_usage
+      - act/act:
+          name: Passing in workflow file
+          workflow-file: ./hello-word.yml
+          skip-create-workflow-file: true
+      - act/act:
+          name: Override executor
+          uses: actions/hello-world-javascript-action@v1.1
+          with: |
+            who-to-greet: "Mona the Octocat"
+          env: |
+            hello: world
+          executor:
+            name: act/default
+            image: android:2024.11.1
+            resource_class: medium 
+            docker_layer_caching: true
+      - run_on_remote_docker:
+          name: "Run on Remote Docker"
