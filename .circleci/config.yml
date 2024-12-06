@@ -751,7 +751,7 @@ orbs:
             description: Skips creating the workflow file
           executor:
             type: executor
-            default: act/default
+            default: default
             description: The type of executor to use with Act
           # image:
           #   type: string
@@ -826,5 +826,4 @@ workflows:
           with: |
             who-to-greet: "Mona the Octocat"
           env: |
-          verbose: true
             hello: world
