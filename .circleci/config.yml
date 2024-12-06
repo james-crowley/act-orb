@@ -301,7 +301,7 @@ orbs:
                 if [ ! -f "<< parameters.secret-file >>" ]; then
                   echo "Warning: Secret file not found at << parameters.secret-file >>. Skipping..."
                 else
-                  act_cmd="$act_cmd --secret << parameters.secret-file >>"
+                  act_cmd="$act_cmd --secret-file << parameters.secret-file >>"
                 fi
 
                 if [ ! -f "<< parameters.input-file >>" ]; then
