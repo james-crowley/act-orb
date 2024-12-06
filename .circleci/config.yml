@@ -142,7 +142,7 @@ orbs:
               command: |
                 # Check if the 'action' parameter is set
                 if [ -z "<< parameters.action >>" ]; then
-                  echo "Error: The 'action' parameter is required but not set."
+                  echo "Error: The 'action' or 'uses' parameter is required but not set."
                   echo "If you are trying to pass in a workflow, please set skip-create-workflow-file to true to avoid this error."
                   exit 1
                 fi
@@ -1016,7 +1016,7 @@ workflows:
       - act/act:
           name: Passing in workflow file
           workflow-file: ./hello-world.yml
-          # skip-create-workflow-file: true
+          skip-create-workflow-file: true
       - act/act:
           name: Override executor
           uses: actions/hello-world-javascript-action@v1.1
