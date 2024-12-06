@@ -814,8 +814,8 @@ workflows:
             output: report.sarif
             scanners: vuln,secret,misconfig,license
           verbose: true
-          #platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
-          #context: act
+          platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
+          context: act
       - act/act:
           name: "Hello world Example"
           uses: actions/hello-world-javascript-action@v1.1
