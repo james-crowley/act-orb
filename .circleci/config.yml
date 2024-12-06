@@ -820,6 +820,10 @@ workflows:
           verbose: true
           platform: ubuntu-latest=ghcr.io/catthehacker/ubuntu:act-latest
           context: act
+          executor:
+            name: act/default
+            resource_class: medium
+            docker_layer_caching: true
       - act/act:
           name: "Hello world Example"
           uses: actions/hello-world-javascript-action@v1.1
