@@ -1,6 +1,7 @@
 version: 2.1
 
 orbs:
+  orb-tools: crowley/orb-tools@dev:alpha
   act:
     commands:
       install:
@@ -990,6 +991,10 @@ jobs:
 workflows:
   main:
     jobs:
+      - orb-tools/lint:
+          filters:
+            tags:
+              only: /.*/
       - act/act:
           uses: aquasecurity/trivy-action@master
           with: |
